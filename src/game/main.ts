@@ -1,6 +1,4 @@
 import { Boot } from './scenes/Boot';
-import { GameOver } from './scenes/GameOver';
-import { Game as MainGame } from './scenes/Game';
 import { Intro } from './scenes/Intro';
 import { Map } from './scenes/Map';
 import { AUTO, Game } from 'phaser';
@@ -19,8 +17,6 @@ const config: Phaser.Types.Core.GameConfig = {
         Preloader,
         Intro,
         Map,
-        MainGame,
-        GameOver
     ],
     scale: {
         mode: Phaser.Scale.RESIZE,  // Автоматическое изменение размера
