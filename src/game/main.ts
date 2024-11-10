@@ -1,7 +1,8 @@
 import { Boot } from './scenes/Boot';
 import { GameOver } from './scenes/GameOver';
 import { Game as MainGame } from './scenes/Game';
-import { MainMenu } from './scenes/MainMenu';
+import { Intro } from './scenes/Intro';
+import { Map } from './scenes/Map';
 import { AUTO, Game } from 'phaser';
 import { Preloader } from './scenes/Preloader';
 
@@ -9,17 +10,22 @@ import { Preloader } from './scenes/Preloader';
 //  https://newdocs.phaser.io/docs/3.70.0/Phaser.Types.Core.GameConfig
 const config: Phaser.Types.Core.GameConfig = {
     type: AUTO,
-    width: 1024,
-    height: 768,
+    width: window.innerWidth,
+    height: window.innerHeight,
     parent: 'game-container',
     backgroundColor: '#028af8',
     scene: [
         Boot,
         Preloader,
-        MainMenu,
+        Intro,
+        Map,
         MainGame,
         GameOver
-    ]
+    ],
+    scale: {
+        mode: Phaser.Scale.RESIZE,  // Автоматическое изменение размера
+        autoCenter: Phaser.Scale.CENTER_BOTH,  // Центрирование
+    },
 };
 
 const StartGame = (parent: string) => {
