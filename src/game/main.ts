@@ -4,7 +4,7 @@ import { Map } from './scenes/Map';
 import { AUTO, Game } from 'phaser';
 import { Preloader } from './scenes/Preloader';
 import { Level_1 } from './scenes/levels/Level_1';
-import { CharacterPreloader } from './scenes/CharacterPreloader';
+import { LevelPreloader } from './scenes/LevelPreloader';
 
 //  Find out more information about the Game Config at:
 //  https://newdocs.phaser.io/docs/3.70.0/Phaser.Types.Core.GameConfig
@@ -19,14 +19,14 @@ const config: Phaser.Types.Core.GameConfig = {
         Preloader,
         Intro,
         Map,
-        CharacterPreloader,
+        LevelPreloader,
         Level_1
     ],
     physics: {
         default: 'arcade',
         arcade: {
           gravity: {
-            y: 1000
+            y: 10000
           }
         }
     },

@@ -68,7 +68,7 @@ export class Map extends Scene {
     // Обработчик выбора уровня
     private selectLevel(level: number) {
         console.log(`Переход к уровню ${level}`);
-        this.scene.start('CharacterPreloader', { targetLevel: `Level_${level}` });
+        this.scene.start('LevelPreloader', { targetLevel: `Level_${level}` });
     }
 
     // Обработчик изменения размера экрана
