@@ -12,10 +12,13 @@ export class Character extends Physics.Arcade.Sprite {
 
         this.setDepth(10);
         this.setCollideWorldBounds(true);
-        this.setScale(1.5);
+        this.setScale(2);
 
         // Добавляем управление
         this.cursors = scene.input.keyboard.createCursorKeys();
+
+        // Устанавливаем стандартную гравитацию для персонажа
+        this.body.setGravityY(2000); // Базовая гравитация
     }
 
     static preload(scene: Scene) {
@@ -48,8 +51,8 @@ export class Character extends Physics.Arcade.Sprite {
     }
 
     handleMovement() {
-        const speed = 300;
-        this.setVelocity(0);
+        const speed = 300; // Скорость движения влево/вправо
+        this.setVelocityX(0); // Сбрасываем горизонтальную скорость
 
         if (this.cursors.left.isDown) {
             this.setVelocityX(-speed);
@@ -62,7 +65,22 @@ export class Character extends Physics.Arcade.Sprite {
         }
 
         if (this.cursors.up.isDown && this.body.blocked.down) {
-            this.setVelocityY(-5000);
+            this.setVelocityY(-400); // Устанавливаем начальную силу прыжка
+        }
+
+        // Динамическая гравитация
+        if (this.body.velocity.y < 0) {
+            // Персонаж поднимается - уменьшаем влияние гравитации
+            this.setGravityY(1000);
+        } else {
+            // Персонаж падает - увеличиваем гравитацию
+            this.setGravityY(3000);
+        }
+
+        // Ограничиваем максимальную скорость падения
+        const maxFallSpeed = 600;
+        if (this.body.velocity.y > maxFallSpeed) {
+            this.setVelocityY(maxFallSpeed);
         }
     }
 }

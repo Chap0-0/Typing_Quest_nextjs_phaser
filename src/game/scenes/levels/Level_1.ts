@@ -33,8 +33,9 @@ export class Level_1 extends Scene {
         const scaleRatio = this.scale.height / mapHeight;
         collidersLayer.setScale(scaleRatio);
         backgroundLayer.setScale(scaleRatio);
-
+        
         this.Character = new Character(this, 100, 400, "character");
+
         this.cameras.main.startFollow(this.Character);
         this.cameras.main.setZoom(1);
         this.cameras.main.setBounds(0, 0, this.map.widthInPixels * scaleRatio, this.map.heightInPixels * scaleRatio);
