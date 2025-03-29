@@ -50,7 +50,6 @@ export class LevelPreloader extends Scene {
 
     private loadResourcesForLevel(levelName: string) {
         const levelPath = `assets/levels/${levelName}`;
-        
         this.load.setPath(levelPath);
         this.load.tilemapTiledJSON(`${levelName}_map`, `${levelName}.tmj`);
         this.load.image(`tiles_${levelName}`, `tiles_${levelName}.png`);
@@ -58,7 +57,6 @@ export class LevelPreloader extends Scene {
         this.load.image(`${levelName}_bg`, `${levelName}_bg.png`);
         this.load.audio("backgroundMusic", `${levelName}.mp3`);
 
-        // После загрузки уровня, сброс пути, чтобы не затрагивать другие ресурсы
         this.load.setPath(""); 
     }
 }

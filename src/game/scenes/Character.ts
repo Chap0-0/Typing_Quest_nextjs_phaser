@@ -2,6 +2,7 @@ import { Scene, Physics } from "phaser";
 
 export class Character extends Physics.Arcade.Sprite {
     private cursors: Phaser.Types.Input.Keyboard.CursorKeys;
+    private isMoving: boolean = false;  // Новый флаг для управления движением
 
     constructor(scene: Scene, x: number, y: number, texture: string) {
         super(scene, x, y, texture);
@@ -9,14 +10,9 @@ export class Character extends Physics.Arcade.Sprite {
         // Добавляем игрока в физическую группу сцены
         scene.add.existing(this);
         scene.physics.add.existing(this);
-
-        this.setDepth(10);
-        this.setCollideWorldBounds(true);
         this.setScale(2);
-
-        // Добавляем управление
-        this.cursors = scene.input.keyboard.createCursorKeys();
-
+        this.setDepth(100);
+        this.setCollideWorldBounds(true);
         // Устанавливаем стандартную гравитацию для персонажа
         this.body.setGravityY(2000); // Базовая гравитация
     }
@@ -29,13 +25,6 @@ export class Character extends Physics.Arcade.Sprite {
     }
 
     static createAnimations(scene: Scene) {
-        scene.anims.create({
-            key: "left",
-            frames: scene.anims.generateFrameNumbers("character", { start: 0, end: 3 }),
-            frameRate: 10,
-            repeat: -1,
-        });
-
         scene.anims.create({
             key: "turn",
             frames: [{ key: "character", frame: 4 }],
@@ -51,23 +40,15 @@ export class Character extends Physics.Arcade.Sprite {
     }
 
     handleMovement() {
-        const speed = 300; // Скорость движения влево/вправо
-        this.setVelocityX(0); // Сбрасываем горизонтальную скорость
+        const speed = 300; // Скорость движения
 
-        if (this.cursors.left.isDown) {
-            this.setVelocityX(-speed);
-            this.anims.play("left", true);
-        } else if (this.cursors.right.isDown) {
+        if (this.isMoving) {
             this.setVelocityX(speed);
-            this.anims.play("right", true);
+            this.anims.play("right", true);            // Движение вправо
         } else {
-            this.anims.play("turn", true);
+            this.setVelocityX(0);
+            this.anims.play("turn", true);            // Остановка
         }
-
-        if (this.cursors.up.isDown && this.body.blocked.down) {
-            this.setVelocityY(-400); // Устанавливаем начальную силу прыжка
-        }
-
         // Динамическая гравитация
         if (this.body.velocity.y < 0) {
             // Персонаж поднимается - уменьшаем влияние гравитации
@@ -82,5 +63,15 @@ export class Character extends Physics.Arcade.Sprite {
         if (this.body.velocity.y > maxFallSpeed) {
             this.setVelocityY(maxFallSpeed);
         }
+    }
+    startMoving() {
+        this.isMoving = true;
+        this.scene.time.delayedCall(500, () => {
+            this.stopMoving();  // Останавливаем движение через 0,5 секунд
+        });
+    }
+
+    stopMoving() {
+        this.isMoving = false;
     }
 }
