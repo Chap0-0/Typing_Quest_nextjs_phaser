@@ -10,7 +10,7 @@ export class Character extends Physics.Arcade.Sprite {
         // Добавляем игрока в физическую группу сцены
         scene.add.existing(this);
         scene.physics.add.existing(this);
-        this.setScale(2);
+        this.setScale(1.75);
         this.setDepth(100);
         this.setCollideWorldBounds(true);
         // Устанавливаем стандартную гравитацию для персонажа
