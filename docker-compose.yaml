@@ -1,0 +1,74 @@
+services:
+  db_postgres:
+    image: postgres:latest
+    container_name: db_tq
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: typing_quest
+      POSTGRES_HOST_AUTH_METHOD: md5
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - my_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./tq_backend
+    container_name: project-backend
+    expose:
+      - "4000"
+    environment:
+      PORT: 4000
+      DB_HOST: db_postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: root
+      DB_NAME: typing_quest
+      NODE_ENV: development
+    ports:
+      - "4000:4000"
+    depends_on:
+      db_postgres:
+        condition: service_healthy
+    networks:
+      - my_network
+
+  frontend:
+    build:
+      context: ./typing_quest
+    container_name: project-frontend
+    ports:
+      - "3000:8080"
+    networks:
+      - my_network
+    depends_on:
+      - backend
+
+  nginx:
+      image: nginx:latest
+      container_name: project-nginx
+      ports:
+        - "80:80"
+      volumes:
+        - ./nginx/conf.d:/etc/nginx/conf.d
+        - ./typing_quest/dist:/usr/share/nginx/html
+      depends_on:
+        - backend
+        - frontend
+      networks:
+        - my_network
+
+networks:
+  my_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
