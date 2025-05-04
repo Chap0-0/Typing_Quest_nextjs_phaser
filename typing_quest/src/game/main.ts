@@ -3,7 +3,7 @@ import { Intro } from './scenes/Intro';
 import { Map } from './scenes/Map';
 import { AUTO, Game } from 'phaser';
 import { Preloader } from './scenes/Preloader';
-import { Level_1 } from './scenes/levels/Level_1';
+import { Level_1 } from './scenes/levels/Level1';
 import { LevelPreloader } from './scenes/LevelPreloader';
 
 //  Find out more information about the Game Config at:
@@ -22,10 +22,16 @@ const config: Phaser.Types.Core.GameConfig = {
         LevelPreloader,
         Level_1
     ],
+    
+    dom: {
+        createContainer: true
+    },
+  
+  
     physics: {
         default: 'arcade',
         arcade: {
-          debug: false,
+          debug: true,
         }
     },
     scale: {

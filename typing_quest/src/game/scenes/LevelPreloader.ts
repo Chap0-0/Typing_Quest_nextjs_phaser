@@ -1,5 +1,5 @@
 import { Scene } from "phaser";
-import { Character } from "./Character";
+import { Character } from "../entities/Character";
 
 export class LevelPreloader extends Scene {
     private targetLevel: string;
@@ -38,6 +38,7 @@ export class LevelPreloader extends Scene {
 
         // Загрузка ресурсов персонажа
         Character.preload(this);
+        this.load.image('input_bg', 'assets/ui/scroll.png');
     }
 
     create() {
@@ -54,9 +55,11 @@ export class LevelPreloader extends Scene {
         this.load.tilemapTiledJSON(`${levelName}_map`, `${levelName}.tmj`);
         this.load.image(`tiles_${levelName}`, `tiles_${levelName}.png`);
         this.load.image(`decors_${levelName}`, `decors_${levelName}.png`);
+        this.load.json('input_sequences', `${levelName}.json`);
         this.load.image(`${levelName}_bg`, `${levelName}_bg.png`);
         this.load.audio("backgroundMusic", `${levelName}.mp3`);
-
         this.load.setPath(""); 
+        this.load.image('pause_button', 'assets/ui/pause_button.png');
+
     }
 }
