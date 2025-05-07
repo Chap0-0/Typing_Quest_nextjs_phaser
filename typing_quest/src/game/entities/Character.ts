@@ -2,6 +2,12 @@ import { Scene, Physics } from "phaser";
 
 export class Character extends Physics.Arcade.Sprite {
     private isMoving: boolean = false;
+    private isRunning: boolean = false;
+    private remainingDistance: number = 0;
+    private walkSpeed: number = 200;
+    private runSpeed: number = 400;
+    private runThreshold: number = 300;
+    private targetX = this.x;
 
     constructor(scene: Scene, x: number, y: number, texture: string) {
         super(scene, x, y, texture);
@@ -37,6 +43,11 @@ export class Character extends Physics.Arcade.Sprite {
             frameWidth: 96,
             frameHeight: 60,
         });
+
+        scene.load.spritesheet("run", "assets/character/RUN.png", {
+            frameWidth: 96,
+            frameHeight: 60,
+        });
     }
 
     static createAnimations(scene: Scene) {
@@ -45,9 +56,9 @@ export class Character extends Physics.Arcade.Sprite {
             key: "idle",
             frames: scene.anims.generateFrameNumbers("idle", {
                 start: 0,
-                end: 7,
+                end: 6,
             }),
-            frameRate: 8,
+            frameRate: 10,
         });
 
         // Анимация ходьбы
@@ -57,15 +68,18 @@ export class Character extends Physics.Arcade.Sprite {
                 start: 0,
                 end: 7,
             }),
-            frameRate: 10,
+            frameRate: 12,
         });
 
         // Анимация прыжка (только вверх)
         scene.anims.create({
             key: "jump_up",
-            frames: scene.anims.generateFrameNumbers("jump", { start: 0, end: 2 }),
+            frames: scene.anims.generateFrameNumbers("jump", {
+                start: 0,
+                end: 2,
+            }),
             frameRate: 15,
-            repeat: 0
+            repeat: 0,
         });
 
         // Анимация падения (только вниз)
@@ -73,17 +87,39 @@ export class Character extends Physics.Arcade.Sprite {
             key: "fall",
             frames: [{ key: "jump", frame: 3 }],
             frameRate: 2,
-            repeat: 0
+            repeat: 0,
         });
-    }
 
+        scene.anims.create({
+            key: "run",
+            frames: scene.anims.generateFrameNumbers("run", {
+                start: 0,
+                end: 7,
+            }),
+            frameRate: 12,
+        });
+
+    }
 
     updateState() {
         const isOnGround = this.body.blocked.down || this.body.touching.down;
 
         if (isOnGround) {
             this.isJumping = false;
-            this.play(this.isMoving ? "walk" : "idle", true);
+            if (this.isMoving) {
+                // Автоматически определяем режим движения
+                const distanceToTarget = this.targetX - this.x;
+                this.isRunning = distanceToTarget > this.runThreshold;
+                
+                this.play(this.isRunning ? "run" : "walk", true);
+                
+                // Автоматическая остановка при достижении цели
+                if (distanceToTarget <= 0) {
+                    this.stopMoving();
+                }
+            } else {
+                this.play("idle", true);
+            }
         } else {
             if (this.body.velocity.y < 0 && !this.isJumping) {
                 this.isJumping = true;
@@ -93,11 +129,30 @@ export class Character extends Physics.Arcade.Sprite {
             }
         }
 
-        this.updateHitbox(isOnGround ? (this.isMoving ? "walk" : "idle") : 
-                          (this.body.velocity.y < 0 ? "jump" : "fall"));
+        this.updateHitbox(
+            isOnGround
+                ? this.isMoving
+                    ? this.isRunning
+                        ? "run"
+                        : "walk"
+                    : "idle"
+                : this.body.velocity.y < 0
+                ? "jump"
+                : "fall"
+        );
     }
 
-    private updateHitbox(state: "idle" | "walk" | "jump" | "fall") {
+    move(distanceToAdd: number) {
+        this.targetX += distanceToAdd;
+        this.isMoving = true;
+        
+        // Определяем скорость движения
+        const speed = this.isRunning ? this.runSpeed : this.walkSpeed;
+        this.setVelocityX(speed);
+    }
+
+
+    private updateHitbox(state: "idle" | "walk" | "jump" | "fall" | "run") {
         switch (state) {
             case "idle":
                 this.body.setSize(32, 35);
@@ -105,6 +160,11 @@ export class Character extends Physics.Arcade.Sprite {
                 break;
 
             case "walk":
+                this.body.setSize(32, 35);
+                this.body.setOffset(32, 25);
+                break;
+
+            case "run":
                 this.body.setSize(32, 35);
                 this.body.setOffset(32, 25);
                 break;
@@ -121,28 +181,17 @@ export class Character extends Physics.Arcade.Sprite {
         }
     }
 
-    go() {
-        this.isMoving = true;
-        // Движение только во время анимации
-        this.setVelocityX(200);
-
-        // Автоматическая остановка после анимации
-        this.once("animationcomplete-walk", () => {
-            this.stopMoving();
-        });
-    }
-
     stopMoving() {
         this.isMoving = false;
+        this.isRunning = false;
         this.setVelocityX(0);
-        this.setAccelerationX(0);
-        this.play("idle", true); // Возврат к анимации покоя
+        this.play("idle", true);
     }
-
 
     jump() {
         if (this.body.blocked.down || this.body.touching.down) {
-            this.setVelocityY(-400);
+            this.targetX += 100;
+            this.setVelocityY(-450);
             this.isJumping = true;
             this.play("jump_up", true);
             this.updateHitbox("jump");

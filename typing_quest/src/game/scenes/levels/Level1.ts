@@ -3,6 +3,8 @@ import { Character } from "../../entities/Character";
 import { EventBus } from "../../EventBus";
 
 export class Level_1 extends Scene {
+    private readonly distancePerKey: number = 100; // Дистанция за один символ
+    
     private backgroundMusic: Sound.BaseSound;
     private isAudioPlaying: boolean = true;
     private character: Character;
@@ -218,12 +220,6 @@ export class Level_1 extends Scene {
             this.scene.start("Map");
         });
 
-        // Для отладки
-        console.log("DOM элементы меню:", {
-            toggleSound: toggleSoundBtn,
-            resume: resumeBtn,
-            return: returnBtn,
-        });
     }
 
     private togglePause() {
@@ -447,18 +443,20 @@ export class Level_1 extends Scene {
     }
 
 
-    // private handleInput(event: KeyboardEvent) {
-    //     if (this.isGamePaused) return;
+    private processCorrectInput() {
+        this.currentInputIndex++;
+        this.updateSymbolDisplay();
+        
+        this.character.move(this.distancePerKey);
     
-    //     const expectedChar = this.fullSequence[this.currentInputIndex];
-    //     const inputChar = event.key.toLowerCase();
+        if (this.currentInputIndex < this.fullSequence.length) {
+            this.time.delayedCall(300, () => {
+                const nextChar = this.fullSequence[this.currentInputIndex];
+                this.handleInput({ key: nextChar });
+            });
+        }
+    }
     
-    //     if (inputChar === expectedChar) {
-    //         this.currentInputIndex++;
-    //         this.updateSymbolDisplay();
-    //         this.character.go();
-    //     }
-    // }
     private handleInput(event: KeyboardEvent | { key: string }) {
         if (this.isGamePaused) return;
         
@@ -471,20 +469,6 @@ export class Level_1 extends Scene {
             if (this.currentInputIndex >= this.fullSequence.length) {
                 this.showLevelComplete();
             }
-
-            // Автоматический ввод следующего символа через задержку
-            if (this.currentInputIndex < this.fullSequence.length - 1) {
-                this.time.delayedCall(100, () => {
-                    const nextChar = this.fullSequence[this.currentInputIndex];
-                    this.handleInput({ key: nextChar });
-                });
-            }
         }
-    }
-    
-    private processCorrectInput() {
-        this.currentInputIndex++;
-        this.updateSymbolDisplay();
-        this.character.go();
     }
 }
