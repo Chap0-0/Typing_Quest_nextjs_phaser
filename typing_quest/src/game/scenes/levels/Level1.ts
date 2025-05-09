@@ -15,6 +15,9 @@ export class Level_1 extends Scene {
     private autojumpZones: Phaser.Types.Tilemaps.TiledObject[] = [];
     private fullSequence: string[] = [];
     private symbols: string[];
+
+    private finishZone: Phaser.Types.Tilemaps.TiledObject | null = null;
+
     background: GameObjects.Image;
     backgroundLayer: Tilemaps.Layer;
     map: Tilemaps.Tilemap;
@@ -64,8 +67,7 @@ export class Level_1 extends Scene {
         const collidersLayer = this.map.createLayer("main", tileset, 0, 0);
 
         this.autojumpZones = this.map.getObjectLayer("autojump")?.objects || [];
-        // Создаем графический слой для отладки
-        this.debugGraphics = this.add.graphics();
+        this.finishZone = this.map.getObjectLayer('finish')?.objects[0] || null;
 
         collidersLayer.setDepth(1).setCollisionByExclusion([-1]);
         backgroundLayer.setDepth(1);
@@ -73,6 +75,8 @@ export class Level_1 extends Scene {
         const scaleRatio = this.scale.height / this.map.heightInPixels;
         collidersLayer.setScale(scaleRatio);
         backgroundLayer.setScale(scaleRatio);
+
+        this.drawDebugZones(scaleRatio);
 
         this.physics.world.setBounds(
             0,
@@ -120,8 +124,8 @@ export class Level_1 extends Scene {
     private createInputSystem() {
         const sequences = this.cache.json.get("input_sequences").sequences;
 
-        // Генерируем полную последовательность (10 шаблонов)
-        this.fullSequence = this.generateSequence(sequences, 10);
+        // Генерируем полную последовательность (30 шаблонов)
+        this.fullSequence = this.generateSequence(sequences, 30);
 
         // Отображаемая часть (например, 7 символов)
         this.visibleSequence = this.fullSequence.slice(0, 7);
@@ -238,11 +242,11 @@ export class Level_1 extends Scene {
 
     update() {
         if (this.isGamePaused) return;
-        this.checkAutoJump();
+        this.checkZoneIntersections();
         this.character.updateState();
     }
 
-    private checkAutoJump() {
+    private checkZoneIntersections() {
         const player = this.character;
         const scaleRatio = this.scale.height / this.map.heightInPixels;
         const playerBounds = new Phaser.Geom.Rectangle(
@@ -252,9 +256,8 @@ export class Level_1 extends Scene {
             player.body.height
         );
 
-        // Проверяем только если персонаж на земле
-        if (!player.body.blocked.down && !player.body.touching.down) return;
-
+        // Проверка автопрыжков только на земле
+    if (player.body.blocked.down || player.body.touching.down) {
         for (const zone of this.autojumpZones) {
             const zoneRect = new Phaser.Geom.Rectangle(
                 zone.x * scaleRatio,
@@ -263,16 +266,53 @@ export class Level_1 extends Scene {
                 zone.height * scaleRatio
             );
 
-            if (
-                Phaser.Geom.Intersects.RectangleToRectangle(
-                    playerBounds,
-                    zoneRect
-                )
-            ) {
+            if (Phaser.Geom.Intersects.RectangleToRectangle(playerBounds, zoneRect)) {
                 player.jump();
                 break;
             }
         }
+    }
+
+        if (this.finishZone) {
+            const finishRect = new Phaser.Geom.Rectangle(
+                this.finishZone.x * scaleRatio,
+                this.finishZone.y * scaleRatio,
+                this.finishZone.width * scaleRatio,
+                this.finishZone.height * scaleRatio
+            );
+    
+            if (Phaser.Geom.Intersects.RectangleToRectangle(playerBounds, finishRect)) {
+                this.showLevelComplete();
+            }
+        }
+    }
+
+    private drawDebugZones(scaleRatio: number) {
+        // Создаем графический слой для отладки
+        const graphics = this.add.graphics();
+        
+        // Отрисовка зон автопрыжка (желтые)
+        graphics.fillStyle(0xffff00, 0.3);
+        this.autojumpZones.forEach(zone => {
+            graphics.fillRect(
+                zone.x * scaleRatio,
+                zone.y * scaleRatio,
+                zone.width * scaleRatio,
+                zone.height * scaleRatio
+            );
+        });
+        
+        // Отрисовка зоны финиша (зеленая)
+        if (this.finishZone) {
+            graphics.fillStyle(0x00ff00, 0.3);
+            graphics.fillRect(
+                this.finishZone.x * scaleRatio,
+                this.finishZone.y * scaleRatio,
+                this.finishZone.width * scaleRatio,
+                this.finishZone.height * scaleRatio
+            );
+        }
+        
     }
 
     private toggleAudio() {
@@ -435,10 +475,13 @@ export class Level_1 extends Scene {
         this.physics.pause();
         this.isGamePaused = true;
         
-        // Показываем окно
+        // Останавливаем персонажа
+        this.character.stopMoving();
+        
+        // Показываем окно завершения
         this.createCompletionWindow();
         
-        // Останавливаем музыку (опционально)
+        // Останавливаем музыку
         this.backgroundMusic.stop();
     }
 
@@ -465,10 +508,6 @@ export class Level_1 extends Scene {
     
         if (inputChar === expectedChar) {
             this.processCorrectInput();
-            
-            if (this.currentInputIndex >= this.fullSequence.length) {
-                this.showLevelComplete();
-            }
         }
     }
 }

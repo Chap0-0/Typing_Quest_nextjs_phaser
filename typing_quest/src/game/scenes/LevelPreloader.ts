@@ -32,13 +32,11 @@ export class LevelPreloader extends Scene {
     }
 
     preload() {
-        console.log(this.targetLevel);
         // Загрузка ресурсов уровня
         this.loadResourcesForLevel(this.targetLevel);
 
         // Загрузка ресурсов персонажа
         Character.preload(this);
-        this.load.image('input_bg', 'assets/ui/scroll.png');
     }
 
     create() {
@@ -58,8 +56,9 @@ export class LevelPreloader extends Scene {
         this.load.json('input_sequences', `${levelName}.json`);
         this.load.image(`${levelName}_bg`, `${levelName}_bg.png`);
         this.load.audio("backgroundMusic", `${levelName}.mp3`);
+        this.load.json('enemy-config', `enemy-config.json`);
         this.load.setPath(""); 
+        this.load.image('input_bg', 'assets/ui/scroll.png');
         this.load.image('pause_button', 'assets/ui/pause_button.png');
-
     }
 }

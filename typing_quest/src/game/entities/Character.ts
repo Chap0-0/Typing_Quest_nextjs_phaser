@@ -68,7 +68,7 @@ export class Character extends Physics.Arcade.Sprite {
                 start: 0,
                 end: 7,
             }),
-            frameRate: 12,
+            frameRate: 10,
         });
 
         // Анимация прыжка (только вверх)

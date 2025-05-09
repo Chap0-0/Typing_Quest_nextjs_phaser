@@ -4,6 +4,75 @@
  "layers":[
         {
          "draworder":"topdown",
+         "id":6,
+         "name":"finish",
+         "objects":[
+                {
+                 "height":17.5,
+                 "id":28,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":36,
+                 "x":1562,
+                 "y":173
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
+         "id":7,
+         "name":"enemies",
+         "objects":[
+                {
+                 "height":0,
+                 "id":41,
+                 "name":"",
+                 "point":true,
+                 "properties":[
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"mushroom"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":368,
+                 "y":208
+                }, 
+                {
+                 "height":0,
+                 "id":44,
+                 "name":"",
+                 "point":true,
+                 "properties":[
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"mushroom"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":1024,
+                 "y":224
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
          "id":5,
          "name":"autojump",
          "objects":[
@@ -37,8 +106,8 @@
                  "type":"",
                  "visible":true,
                  "width":15.5,
-                 "x":736.25,
-                 "y":192.772727272727
+                 "x":764.583333333333,
+                 "y":208.10606060606
                 }, 
                 {
                  "height":15,
@@ -50,6 +119,50 @@
                  "width":15.5,
                  "x":1152.25,
                  "y":224.875
+                }, 
+                {
+                 "height":15,
+                 "id":33,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":28.8333333333333,
+                 "x":1312.25,
+                 "y":223.166666666667
+                }, 
+                {
+                 "height":15,
+                 "id":34,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":20.8333333333333,
+                 "x":1352.25,
+                 "y":207.166666666667
+                }, 
+                {
+                 "height":15,
+                 "id":35,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":25.5,
+                 "x":1408.25,
+                 "y":191.833333333333
+                }, 
+                {
+                 "height":15,
+                 "id":43,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":15.5,
+                 "x":735.916666666667,
+                 "y":192.5
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -119,8 +232,8 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":6,
- "nextobjectid":28,
+ "nextlayerid":8,
+ "nextobjectid":45,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.0",

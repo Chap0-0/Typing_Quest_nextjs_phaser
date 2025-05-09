@@ -1,0 +1,14 @@
+{
+  "enemyTypes": {
+    "mushroom": {
+      "texture": "enemies/mushroom/Mushroom-Idle.png",
+      "spritesheetConfig": {
+        "frameWidth": 80,
+        "frameHeight": 64
+      },
+      "defaultAnim": "idle",
+      "physics": {
+      }
+    }
+  }
+}
