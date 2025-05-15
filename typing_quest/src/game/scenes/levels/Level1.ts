@@ -1,56 +1,74 @@
-import { Scene, GameObjects, Tilemaps, Sound } from "phaser";
+import { Scene, GameObjects, Tilemaps, Sound, Physics } from "phaser";
 import { Character } from "../../entities/Character";
 import { EventBus } from "../../EventBus";
+import { EnemyManager } from "./EnemyManager";
 
 export class Level_1 extends Scene {
-    private readonly distancePerKey: number = 100; // Дистанция за один символ
-    
-    private backgroundMusic: Sound.BaseSound;
+    // Основные свойства
+    private readonly distancePerKey: number = 100;
+    private backgroundMusic!: Sound.BaseSound;
     private isAudioPlaying: boolean = true;
-    private character: Character;
+    private character!: Character;
     private currentInputIndex: number = 0;
-    private symbolContainer: Phaser.GameObjects.Container;
+    private symbolContainer!: GameObjects.Container;
     private isGamePaused: boolean = false;
-    private pauseMenu: Phaser.GameObjects.DOMElement;
+    private pauseMenu!: GameObjects.DOMElement;
     private autojumpZones: Phaser.Types.Tilemaps.TiledObject[] = [];
-    private fullSequence: string[] = [];
-    private symbols: string[];
-
     private finishZone: Phaser.Types.Tilemaps.TiledObject | null = null;
-
-    background: GameObjects.Image;
-    backgroundLayer: Tilemaps.Layer;
-    map: Tilemaps.Tilemap;
+    private background!: GameObjects.Image;
+    private map!: Tilemaps.Tilemap;
+    private enemyManager!: EnemyManager;
+    private level_config: any;
+    
+    private isBattleMode: boolean = false;
+    private battleEnemy: Enemy | null = null;
+    private battleSequence: string[] = [];
+    private battleInputIndex: number = 0;
+    private battleSymbolContainer!: GameObjects.Container;
+    private battleBackground!: GameObjects.Rectangle;
+    private battleDistance: number = 100;
 
     constructor() {
         super("Level_1");
     }
 
     create() {
+        // Инициализация основных систем
         this.initScene();
         this.createLevelMap();
         this.createCharacter();
         this.createAudio();
         this.createInputSystem();
         this.createPauseSystem();
+        this.createEnemies();
 
-        // Блокируем функции в окне
+        // Блокировка специальных клавиш
         this.input.keyboard.on("keydown", (event: KeyboardEvent) => {
-            if (event.key === "/") {
-                event.preventDefault();
-            }
-            if (event.key === "'") {
+            if (event.key === "/" || event.key === "'") {
                 event.preventDefault();
             }
         });
     }
 
+    update() {
+        if (this.isGamePaused) return;
+        if (!this.isBattleMode) {
+            this.checkBattleStart();
+        }
+
+        this.checkZoneIntersections();
+        this.character.updateState();
+    }
+
+    // ===== Основные методы инициализации =====
     private initScene() {
         this.background = this.add
             .image(0, 0, "Level_1_bg")
             .setOrigin(0, 0)
             .setDisplaySize(this.scale.width, this.scale.height)
             .setScrollFactor(0);
+
+        this.level_config = this.cache.json.get('Level_1');
     }
 
     private createLevelMap() {
@@ -67,7 +85,7 @@ export class Level_1 extends Scene {
         const collidersLayer = this.map.createLayer("main", tileset, 0, 0);
 
         this.autojumpZones = this.map.getObjectLayer("autojump")?.objects || [];
-        this.finishZone = this.map.getObjectLayer('finish')?.objects[0] || null;
+        this.finishZone = this.map.getObjectLayer("finish")?.objects[0] || null;
 
         collidersLayer.setDepth(1).setCollisionByExclusion([-1]);
         backgroundLayer.setDepth(1);
@@ -75,8 +93,6 @@ export class Level_1 extends Scene {
         const scaleRatio = this.scale.height / this.map.heightInPixels;
         collidersLayer.setScale(scaleRatio);
         backgroundLayer.setScale(scaleRatio);
-
-        this.drawDebugZones(scaleRatio);
 
         this.physics.world.setBounds(
             0,
@@ -89,18 +105,14 @@ export class Level_1 extends Scene {
     private createCharacter() {
         this.character = new Character(this, 100, 200, "character");
 
-        // Получаем слой с коллизиями правильно
         const collidersLayer = this.map.getLayer("main");
         if (collidersLayer && collidersLayer.tilemapLayer) {
             this.physics.add.collider(
                 this.character,
                 collidersLayer.tilemapLayer
             );
-        } else {
-            console.error("Не найден слой коллизий 'main'");
         }
 
-        // Камера должна следовать за уже созданным персонажем!
         this.cameras.main
             .startFollow(this.character)
             .setZoom(1.3)
@@ -114,6 +126,201 @@ export class Level_1 extends Scene {
             );
     }
 
+    private createEnemies() {
+        const enemyConfig = this.cache.json.get("enemy-config");
+        this.enemyManager = new EnemyManager(this, enemyConfig);
+        this.enemyManager.createFromTilemap(
+            this.map,
+            this.scale.height / this.map.heightInPixels
+        );
+        const collidersLayer = this.map.getLayer("main");
+
+        if (collidersLayer && collidersLayer.tilemapLayer) {
+            this.physics.add.collider(
+                this.enemyManager.getEnemies(),
+                collidersLayer.tilemapLayer
+            );
+        }
+    }
+
+    // ===== Система ввода =====
+    private createInputSystem() {
+        const sequences = this.level_config.sequences;
+        this.fullSequence = this.generateSequence(sequences, 30);
+        this.currentInputIndex = 0;
+
+        this.createInputInterface();
+        this.input.keyboard.on("keydown", this.handleInput.bind(this));
+    }
+
+    private generateSequence(templates: string[], count: number): string[] {
+        let result: string[] = [];
+        for (let i = 0; i < count; i++) {
+            const randomTemplate =
+                templates[Math.floor(Math.random() * templates.length)];
+            result.push(...randomTemplate.split(""));
+        }
+        return result.map((char) => (char === "_" ? " " : char));
+    }
+
+    private createInputInterface() {
+        const interfaceHeight = this.scale.height * 0.4;
+        const interfaceY = this.scale.height - interfaceHeight;
+
+        this.add
+            .image(
+                this.scale.width / 2,
+                interfaceY + interfaceHeight / 2,
+                "input_bg"
+            )
+            .setDisplaySize(800, 120)
+            .setDepth(101)
+            .setScrollFactor(0);
+
+        this.symbolContainer = this.add
+            .container(this.scale.width / 2, interfaceY + interfaceHeight / 2)
+            .setDepth(102)
+            .setScrollFactor(0);
+
+        this.updateSymbolDisplay();
+    }
+
+    private updateSymbolDisplay() {
+        this.symbolContainer.removeAll(true);
+
+        const symbolStyle = {
+            fontSize: "32px",
+            fontFamily: "Arial",
+            color: "#777777",
+        };
+        const currentStyle = {
+            ...symbolStyle,
+            color: "#000000",
+            fontWeight: "bold",
+        };
+        const pastStyle = { ...symbolStyle, color: "#CC2D39" };
+
+        const symbolSpacing = 36;
+        let xPosition = 0;
+
+        // Прошлые символы
+        const pastStart = Math.max(0, this.currentInputIndex - 9);
+        this.fullSequence
+            .slice(pastStart, this.currentInputIndex)
+            .forEach((symbol) => {
+                this.symbolContainer.add(
+                    this.add
+                        .text(xPosition, 0, symbol, pastStyle)
+                        .setOrigin(0.5)
+                );
+                xPosition += symbolSpacing;
+            });
+
+        // Текущий символ
+        if (this.currentInputIndex < this.fullSequence.length) {
+            this.symbolContainer.add(
+                this.add
+                    .text(
+                        xPosition,
+                        0,
+                        this.fullSequence[this.currentInputIndex],
+                        currentStyle
+                    )
+                    .setOrigin(0.5)
+            );
+            xPosition += symbolSpacing;
+        }
+
+        // Будущие символы
+        this.fullSequence
+            .slice(
+                this.currentInputIndex + 1,
+                this.currentInputIndex +
+                    1 +
+                    (19 - (this.currentInputIndex - pastStart + 1))
+            )
+            .forEach((symbol) => {
+                this.symbolContainer.add(
+                    this.add
+                        .text(xPosition, 0, symbol, symbolStyle)
+                        .setOrigin(0.5)
+                );
+                xPosition += symbolSpacing;
+            });
+
+        this.symbolContainer.x = this.scale.width / 2 - symbolSpacing * 9;
+    }
+
+    private handleInput(event: KeyboardEvent | { key: string }) {
+        if (this.isGamePaused || this.isBattleMode) return;
+        if (
+            event.key.toLowerCase() ===
+            this.fullSequence[this.currentInputIndex]
+        ) {
+            this.processCorrectInput();
+        }
+    }
+
+    private processCorrectInput() {
+        this.currentInputIndex++;
+        this.updateSymbolDisplay();
+        this.character.move(this.distancePerKey);
+
+        if (this.currentInputIndex < this.fullSequence.length) {
+            this.time.delayedCall(300, () => {
+                this.handleInput({
+                    key: this.fullSequence[this.currentInputIndex],
+                });
+            });
+        }
+    }
+
+    // ===== Система паузы =====
+    private createPauseSystem() {
+        const pauseButton = this.add
+            .image(this.scale.width - 1300, 140, "pause_button")
+            .setInteractive({ useHandCursor: true })
+            .setScrollFactor(0)
+            .setDepth(10000)
+            .setScale(5)
+            .on("pointerdown", () => this.togglePause());
+
+        this.pauseMenu = this.add
+            .dom(this.scale.width / 2, this.scale.height / 2)
+            .createFromHTML(
+                `
+                <div style="background: rgba(0,0,0,0.8); border-radius:10px; padding:20px; text-align:center; width:300px;">
+                    <button id="toggleSound" style="background:none; border:none; color:white; font-size:24px; cursor:pointer; margin-bottom:20px;">🔊</button>
+                    <button id="resumeGame" style="background:#4CAF50; color:white; border:none; padding:10px 20px; margin:10px; cursor:pointer; width:80%;">Продолжить</button>
+                    <button id="returnToMap" style="background:#f44336; color:white; border:none; padding:10px 20px; margin:10px; cursor:pointer; width:80%;">Вернуться на карту</button>
+                </div>
+            `
+            )
+            .setOrigin(0.5)
+            .setScrollFactor(0)
+            .setDepth(20000)
+            .setVisible(false);
+
+        const toggleSoundBtn = this.pauseMenu.getChildByID("toggleSound");
+        const resumeBtn = this.pauseMenu.getChildByID("resumeGame");
+        const returnBtn = this.pauseMenu.getChildByID("returnToMap");
+
+        toggleSoundBtn?.addEventListener("click", () => {
+            this.toggleAudio();
+            toggleSoundBtn.textContent = this.isAudioPlaying ? "🔊" : "🔇";
+        });
+
+        resumeBtn?.addEventListener("click", () => this.togglePause());
+        returnBtn?.addEventListener("click", () => this.scene.start("Map"));
+    }
+
+    private togglePause() {
+        this.isGamePaused = !this.isGamePaused;
+        this.isGamePaused ? this.physics.pause() : this.physics.resume();
+        this.pauseMenu.setVisible(this.isGamePaused);
+    }
+
+    // ===== Аудио система =====
     private createAudio() {
         this.backgroundMusic = this.sound.add("backgroundMusic", {
             loop: true,
@@ -121,131 +328,14 @@ export class Level_1 extends Scene {
         this.backgroundMusic.play();
     }
 
-    private createInputSystem() {
-        const sequences = this.cache.json.get("input_sequences").sequences;
-
-        // Генерируем полную последовательность (30 шаблонов)
-        this.fullSequence = this.generateSequence(sequences, 30);
-
-        // Отображаемая часть (например, 7 символов)
-        this.visibleSequence = this.fullSequence.slice(0, 7);
-        this.currentInputIndex = 0;
-
-        this.createInputInterface();
-        this.input.keyboard.on("keydown", this.handleInput.bind(this));
-    }
-    private generateSequence(templates: string[], count: number): string[] {
-        let result: string[] = [];
-
-        for (let i = 0; i < count; i++) {
-            const randomTemplate =
-                templates[Math.floor(Math.random() * templates.length)];
-            result.push(...randomTemplate.split(""));
-        }
-
-        return result.map((char) => (char === "_" ? " " : char)); // Заменяем _ на пробелы
-    }
-    private createPauseSystem() {
-        // 1. Кнопка паузы
-        const pauseButton = this.add
-            .image(this.scale.width - 1300, 140, "pause_button")
-            .setInteractive({ useHandCursor: true })
-            .setScrollFactor(0)
-            .setDepth(10000)
-            .setScale(5)
-            .on("pointerdown", () => {
-                this.togglePause();
-            });
-
-        // 2. Создаем DOM-элемент для меню
-        this.pauseMenu = this.add
-            .dom(this.scale.width / 2, this.scale.height / 2)
-            .createFromHTML(
-                `
-            <div style="
-                background: rgba(0, 0, 0, 0.8);
-                border-radius: 10px;
-                padding: 20px;
-                text-align: center;
-                width: 300px;
-                z-index: 1000;
-            ">
-                <button id="toggleSound" style="
-                    background: none;
-                    border: none;
-                    color: white;
-                    font-size: 24px;
-                    cursor: pointer;
-                    margin-bottom: 20px;
-                ">🔊</button>
-                <button id="resumeGame" style="
-                    background: #4CAF50;
-                    color: white;
-                    border: none;
-                    padding: 10px 20px;
-                    margin: 10px;
-                    cursor: pointer;
-                    width: 80%;
-                ">Продолжить</button>
-                <button id="returnToMap" style="
-                    background: #f44336;
-                    color: white;
-                    border: none;
-                    padding: 10px 20px;
-                    margin: 10px;
-                    cursor: pointer;
-                    width: 80%;
-                ">Вернуться на карту</button>
-            </div>
-
-        `
-            )
-            .setOrigin(0.5)
-            .setScrollFactor(0)
-            .setDepth(20000)
-            .setVisible(false);
-
-        // 3. Получаем ссылки на кнопки
-        const toggleSoundBtn = this.pauseMenu.getChildByID("toggleSound");
-        const resumeBtn = this.pauseMenu.getChildByID("resumeGame");
-        const returnBtn = this.pauseMenu.getChildByID("returnToMap");
-
-        // 4. Добавляем обработчики напрямую к элементам
-        toggleSoundBtn?.addEventListener("click", () => {
-            this.toggleAudio();
-            toggleSoundBtn.textContent = this.isAudioPlaying ? "🔊" : "🔇";
-        });
-
-        resumeBtn?.addEventListener("click", () => {
-            this.togglePause();
-        });
-
-        returnBtn?.addEventListener("click", () => {
-            this.scene.start("Map");
-        });
-
+    private toggleAudio() {
+        this.isAudioPlaying = !this.isAudioPlaying;
+        this.isAudioPlaying
+            ? this.backgroundMusic.resume()
+            : this.backgroundMusic.pause();
     }
 
-    private togglePause() {
-        this.isGamePaused = !this.isGamePaused;
-
-        if (this.isGamePaused) {
-            this.physics.pause();
-            this.pauseMenu.setVisible(true);
-            console.log("Меню паузы показано");
-        } else {
-            this.physics.resume();
-            this.pauseMenu.setVisible(false);
-            console.log("Меню паузы скрыто");
-        }
-    }
-
-    update() {
-        if (this.isGamePaused) return;
-        this.checkZoneIntersections();
-        this.character.updateState();
-    }
-
+    // ===== Проверка зон =====
     private checkZoneIntersections() {
         const player = this.character;
         const scaleRatio = this.scale.height / this.map.heightInPixels;
@@ -256,23 +346,28 @@ export class Level_1 extends Scene {
             player.body.height
         );
 
-        // Проверка автопрыжков только на земле
-    if (player.body.blocked.down || player.body.touching.down) {
-        for (const zone of this.autojumpZones) {
-            const zoneRect = new Phaser.Geom.Rectangle(
-                zone.x * scaleRatio,
-                zone.y * scaleRatio,
-                zone.width * scaleRatio,
-                zone.height * scaleRatio
-            );
-
-            if (Phaser.Geom.Intersects.RectangleToRectangle(playerBounds, zoneRect)) {
-                player.jump();
-                break;
+        // Автопрыжки
+        if (player.body.blocked.down || player.body.touching.down) {
+            for (const zone of this.autojumpZones) {
+                const zoneRect = new Phaser.Geom.Rectangle(
+                    zone.x * scaleRatio,
+                    zone.y * scaleRatio,
+                    zone.width * scaleRatio,
+                    zone.height * scaleRatio
+                );
+                if (
+                    Phaser.Geom.Intersects.RectangleToRectangle(
+                        playerBounds,
+                        zoneRect
+                    )
+                ) {
+                    player.jump();
+                    break;
+                }
             }
         }
-    }
 
+        // Финиш
         if (this.finishZone) {
             const finishRect = new Phaser.Geom.Rectangle(
                 this.finishZone.x * scaleRatio,
@@ -280,234 +375,201 @@ export class Level_1 extends Scene {
                 this.finishZone.width * scaleRatio,
                 this.finishZone.height * scaleRatio
             );
-    
-            if (Phaser.Geom.Intersects.RectangleToRectangle(playerBounds, finishRect)) {
+            if (
+                Phaser.Geom.Intersects.RectangleToRectangle(
+                    playerBounds,
+                    finishRect
+                )
+            ) {
                 this.showLevelComplete();
             }
         }
     }
 
-    private drawDebugZones(scaleRatio: number) {
-        // Создаем графический слой для отладки
-        const graphics = this.add.graphics();
-        
-        // Отрисовка зон автопрыжка (желтые)
-        graphics.fillStyle(0xffff00, 0.3);
-        this.autojumpZones.forEach(zone => {
-            graphics.fillRect(
-                zone.x * scaleRatio,
-                zone.y * scaleRatio,
-                zone.width * scaleRatio,
-                zone.height * scaleRatio
-            );
-        });
-        
-        // Отрисовка зоны финиша (зеленая)
-        if (this.finishZone) {
-            graphics.fillStyle(0x00ff00, 0.3);
-            graphics.fillRect(
-                this.finishZone.x * scaleRatio,
-                this.finishZone.y * scaleRatio,
-                this.finishZone.width * scaleRatio,
-                this.finishZone.height * scaleRatio
-            );
-        }
-        
-    }
-
-    private toggleAudio() {
-        if (this.isAudioPlaying) {
-            this.backgroundMusic.pause();
-            this.isAudioPlaying = false;
-        } else {
-            this.backgroundMusic.resume();
-            this.isAudioPlaying = true;
-        }
-    }
-
-    generateSymbolSequence(length: number): string[] {
-        const sequence = [];
-        for (let i = 0; i < length; i++) {
-            const randomIndex = Math.floor(Math.random() * this.symbols.length);
-            sequence.push(this.symbols[randomIndex]);
-        }
-        return sequence;
-    }
-
-    createInputInterface() {
-        const interfaceHeight = this.scale.height * 0.4;
-        const interfaceWidth = this.scale.width;
-        const interfaceY = this.scale.height - interfaceHeight;
-
-        this.symbolBox = this.add
-            .image(
-                interfaceWidth / 2,
-                interfaceY + interfaceHeight / 2,
-                "input_bg"
-            )
-            .setDisplaySize(800, 120)
-            .setDepth(101)
-            .setScrollFactor(0);
-
-        this.symbolContainer = this.add
-            .container(interfaceWidth / 2, interfaceY + interfaceHeight / 2)
-            .setDepth(102)
-            .setScrollFactor(0);
-
-        this.updateSymbolDisplay();
-    }
-
-    updateSymbolDisplay() {
-        this.symbolContainer.removeAll(true);
-    
-        const symbolStyle = {
-            fontSize: '32px',
-            fontFamily: 'Arial',
-            color: '#777777' // Серый - будущие символы
-        };
-    
-        const currentSymbolStyle = {
-            ...symbolStyle,
-            color: '#000000', // Черный - текущий
-            fontWeight: 'bold'
-        };
-    
-        const pastSymbolStyle = {
-            ...symbolStyle,
-            color: '#CC2D39' // Красный - введенные
-        };
-    
-        const symbolSpacing = 36;
-        let xPosition = 0;
-    
-        // 1. Введенные символы (красные) - максимум 9 слева
-        const pastStart = Math.max(0, this.currentInputIndex - 9);
-        const pastSymbols = this.fullSequence.slice(pastStart, this.currentInputIndex);
-        
-        pastSymbols.forEach(symbol => {
-            const text = this.add.text(
-                xPosition,
-                0,
-                symbol,
-                pastSymbolStyle
-            )
-            .setOrigin(0.5, 0.5);
-            
-            this.symbolContainer.add(text);
-            xPosition += symbolSpacing;
-        });
-    
-        // 2. Текущий символ (черный)
-        if (this.currentInputIndex < this.fullSequence.length) {
-            const currentText = this.add.text(
-                xPosition,
-                0,
-                this.fullSequence[this.currentInputIndex],
-                currentSymbolStyle
-            )
-            .setOrigin(0.5, 0.5);
-            
-            this.symbolContainer.add(currentText);
-            xPosition += symbolSpacing;
-        }
-    
-        // 3. Будущие символы (серые) - оставшиеся до 19
-        const futureSymbols = this.fullSequence.slice(
-            this.currentInputIndex + 1,
-            this.currentInputIndex + 1 + (19 - (pastSymbols.length + 1))
-        );
-        
-        futureSymbols.forEach(symbol => {
-            const text = this.add.text(
-                xPosition,
-                0,
-                symbol,
-                symbolStyle
-            )
-            .setOrigin(0.5, 0.5);
-            
-            this.symbolContainer.add(text);
-            xPosition += symbolSpacing;
-        });
-    
-        // Центрируем контейнер
-        this.symbolContainer.x = this.scale.width / 2 - (symbolSpacing * 9); // Смещаем на 9 символов
-    }
-
-    private createCompletionWindow() {
-        // Создаем DOM-элемент
-        const completionWindow = this.add.dom(this.scale.width / 2, this.scale.height / 2)
-        .createFromHTML(`
-            <div style="
-                background: rgba(0, 0, 0, 0.9);
-                border: 2px solid #4CAF50;
-                border-radius: 10px;
-                color: white;
-                padding: 20px;
-                text-align: center;
-                width: 300px;
-            ">
-                <h2>Уровень пройден!</h2>
-                <p>Все последовательности введены</p>
-                <button id="nextLevelBtn" style="
-                    background: #4CAF50;
-                    color: white;
-                    border: none;
-                    padding: 10px 20px;
-                    margin-top: 15px;
-                    cursor: pointer;
-                    border-radius: 5px;
-                ">На карту</button>
-            </div>
-        `).setOrigin(0.5).setDepth(10000).setScrollFactor(0);
-    
-        // Обработчик кнопки
-        const nextLevelBtn = completionWindow.getChildByID('nextLevelBtn');
-        nextLevelBtn?.addEventListener('click', () => {
-            this.scene.start('Map'); // Или другая логика перехода
-        });
-    
-        return completionWindow;
-    }
-
     private showLevelComplete() {
-        // Останавливаем игру
         this.physics.pause();
         this.isGamePaused = true;
-        
-        // Останавливаем персонажа
         this.character.stopMoving();
-        
-        // Показываем окно завершения
-        this.createCompletionWindow();
-        
-        // Останавливаем музыку
         this.backgroundMusic.stop();
-    }
 
+        const completionWindow = this.add
+            .dom(this.scale.width / 2, this.scale.height / 2)
+            .createFromHTML(
+                `
+                <div style="background:rgba(0,0,0,0.9); border:2px solid #4CAF50; border-radius:10px; color:white; padding:20px; text-align:center; width:300px;">
+                    <h2>Уровень пройден!</h2>
+                    <p>Все последовательности введены</p>
+                    <button id="nextLevelBtn" style="background:#4CAF50; color:white; border:none; padding:10px 20px; margin-top:15px; cursor:pointer; border-radius:5px;">На карту</button>
+                </div>
+            `
+            )
+            .setOrigin(0.5)
+            .setDepth(10000)
+            .setScrollFactor(0);
 
-    private processCorrectInput() {
-        this.currentInputIndex++;
-        this.updateSymbolDisplay();
-        
-        this.character.move(this.distancePerKey);
-    
-        if (this.currentInputIndex < this.fullSequence.length) {
-            this.time.delayedCall(300, () => {
-                const nextChar = this.fullSequence[this.currentInputIndex];
-                this.handleInput({ key: nextChar });
+        completionWindow
+            .getChildByID("nextLevelBtn")
+            ?.addEventListener("click", () => {
+                this.scene.start("Map");
             });
+    }
+
+    private checkBattleStart() {
+        if (this.isBattleMode) return;
+
+        this.enemyManager
+            .getEnemies()
+            .getChildren()
+            .forEach((enemy: any) => {
+                if (
+                    enemy.isAlive &&
+                    Phaser.Math.Distance.Between(
+                        this.character.x,
+                        this.character.y,
+                        enemy.x,
+                        enemy.y
+                    ) <= this.battleDistance
+                ) {
+                    this.startBattle(enemy);
+                }
+            });
+    }
+
+    private startBattle(enemy: Enemy) {
+        this.isBattleMode = true;
+        this.battleEnemy = enemy;
+        this.character.stopMoving();
+        enemy.stopForBattle(this.character.x);
+        this.character.setFlipX(enemy.x < this.character.x);
+        
+        // Берем случайную последовательность из JSON
+        const randomSequence = Phaser.Utils.Array.GetRandom(this.level_config.battleSequences);
+        this.battleSequence = randomSequence.replace(/_/g, '').split('');
+        this.battleInputIndex = 0;
+
+        // Настраиваем камеру для боя
+        this.cameras.main.zoomTo(2, 500);
+
+        // Создаем интерфейс боя
+        this.createBattleInterface();
+
+        // Останавливаем обычный ввод
+        this.input.keyboard.off("keydown", this.handleInput);
+        this.input.keyboard.on("keydown", this.handleBattleInput.bind(this));
+    }
+
+    private createBattleInterface() {
+        // Фон для боя
+        this.battleBackground = this.add
+            .rectangle(
+                this.scale.width / 2,
+                this.scale.height * 0.3,
+                this.scale.width,
+                80,
+                0x222222,
+                0.8
+            )
+            .setDepth(103)
+            .setScrollFactor(0);
+
+        // Контейнер для символов боя
+        this.battleSymbolContainer = this.add
+            .container(this.scale.width / 2, this.scale.height * 0.3)
+            .setDepth(104)
+            .setScrollFactor(0);
+
+        this.updateBattleSymbolDisplay();
+    }
+
+    private updateBattleSymbolDisplay() {
+        this.battleSymbolContainer.removeAll(true);
+
+        const symbolStyle = {
+            fontSize: "32px",
+            fontFamily: "Arial",
+            color: "#FF5555",
+        };
+        const currentStyle = {
+            ...symbolStyle,
+            color: "#FFFFFF",
+            fontWeight: "bold",
+        };
+        const pastStyle = { ...symbolStyle, color: "#FF0000" };
+
+        const symbolSpacing = 36;
+        let xPosition = -((this.battleSequence.length - 1) * symbolSpacing) / 2;
+
+        // Прошлые символы
+        this.battleSequence
+            .slice(0, this.battleInputIndex)
+            .forEach((symbol) => {
+                this.battleSymbolContainer.add(
+                    this.add
+                        .text(xPosition, 0, symbol, pastStyle)
+                        .setOrigin(0.5)
+                );
+                xPosition += symbolSpacing;
+            });
+
+        // Текущий символ
+        if (this.battleInputIndex < this.battleSequence.length) {
+            this.battleSymbolContainer.add(
+                this.add
+                    .text(
+                        xPosition,
+                        0,
+                        this.battleSequence[this.battleInputIndex],
+                        currentStyle
+                    )
+                    .setOrigin(0.5)
+            );
+            xPosition += symbolSpacing;
+        }
+
+        // Будущие символы
+        this.battleSequence
+            .slice(this.battleInputIndex + 1)
+            .forEach((symbol) => {
+                this.battleSymbolContainer.add(
+                    this.add
+                        .text(xPosition, 0, symbol, symbolStyle)
+                        .setOrigin(0.5)
+                );
+                xPosition += symbolSpacing;
+            });
+    }
+    private handleBattleInput(event: KeyboardEvent | { key: string }) {
+        if (event.key.toLowerCase() === this.battleSequence[this.battleInputIndex]) {
+            this.battleInputIndex++;
+            this.updateBattleSymbolDisplay();
+
+            if (this.battleInputIndex >= this.battleSequence.length) {
+                this.character.attack();
+                this.finishBattle(true);
+            }
         }
     }
-    
-    private handleInput(event: KeyboardEvent | { key: string }) {
-        if (this.isGamePaused) return;
-        
-        const expectedChar = this.fullSequence[this.currentInputIndex];
-        const inputChar = event.key.toLowerCase();
-    
-        if (inputChar === expectedChar) {
-            this.processCorrectInput();
+
+    private finishBattle(success: boolean) {
+        if (success && this.battleEnemy) {
+            this.battleEnemy.takeDamage();
+            this.battleEnemy.body.checkCollision.none = true;
         }
+
+        // Восстанавливаем обычный режим
+        this.isBattleMode = false;
+        this.battleEnemy = null;
+
+        // Удаляем интерфейс боя
+        this.battleBackground.destroy();
+        this.battleSymbolContainer.destroy();
+
+        // Восстанавливаем камеру
+        this.cameras.main.pan(this.character.x, this.character.y, 500);
+        this.cameras.main.zoomTo(1.3, 500);
+
+        // Восстанавливаем обычный ввод
+        this.input.keyboard.off("keydown", this.handleBattleInput);
+        this.input.keyboard.on("keydown", this.handleInput.bind(this));
     }
 }

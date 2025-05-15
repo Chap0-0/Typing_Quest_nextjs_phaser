@@ -8,6 +8,8 @@ export class Character extends Physics.Arcade.Sprite {
     private runSpeed: number = 400;
     private runThreshold: number = 300;
     private targetX = this.x;
+    private numberAnim: number[]= [1,2,3];
+    private battleMode: boolean = false;
 
     constructor(scene: Scene, x: number, y: number, texture: string) {
         super(scene, x, y, texture);
@@ -18,7 +20,6 @@ export class Character extends Physics.Arcade.Sprite {
         // Настройки отображения
         this.setScale(2);
         this.setDepth(100);
-        this.setCollideWorldBounds(true);
 
         // Физические настройки
         this.body.setGravityY(1000);
@@ -48,6 +49,22 @@ export class Character extends Physics.Arcade.Sprite {
             frameWidth: 96,
             frameHeight: 60,
         });
+
+        scene.load.spritesheet("attack_1", "assets/character/ATTACK 1.png", {
+            frameWidth: 96,
+            frameHeight: 60,
+        });
+        
+        scene.load.spritesheet("attack_2", "assets/character/ATTACK 2.png", {
+            frameWidth: 96,
+            frameHeight: 60,
+        });
+
+        scene.load.spritesheet("attack_3", "assets/character/ATTACK 3.png", {
+            frameWidth: 96,
+            frameHeight: 60,
+        });
+
     }
 
     static createAnimations(scene: Scene) {
@@ -91,6 +108,36 @@ export class Character extends Physics.Arcade.Sprite {
         });
 
         scene.anims.create({
+            key: "attack_1",
+            frames: scene.anims.generateFrameNumbers("attack_1", {
+                start: 0,
+                end: 5,
+            }),
+            frameRate: 16,
+            repeat: 0,
+        });
+        
+        scene.anims.create({
+            key: "attack_2",
+            frames: scene.anims.generateFrameNumbers("attack_2", {
+                start: 0,
+                end: 4,
+            }),
+            frameRate: 16,
+            repeat: 0,
+        });
+
+        scene.anims.create({
+            key: "attack_3",
+            frames: scene.anims.generateFrameNumbers("attack_3", {
+                start: 0,
+                end: 5,
+            }),
+            frameRate: 16,
+            repeat: 0,
+        });
+
+        scene.anims.create({
             key: "run",
             frames: scene.anims.generateFrameNumbers("run", {
                 start: 0,
@@ -117,7 +164,7 @@ export class Character extends Physics.Arcade.Sprite {
                 if (distanceToTarget <= 0) {
                     this.stopMoving();
                 }
-            } else {
+            } else if (!this.battleMode) {
                 this.play("idle", true);
             }
         } else {
@@ -187,6 +234,16 @@ export class Character extends Physics.Arcade.Sprite {
         this.setVelocityX(0);
         this.play("idle", true);
     }
+
+    attack(){
+        this.battleMode = true;
+        const number = this.numberAnim[Math.floor(Math.random() * this.numberAnim.length)];
+        console.log(number);
+        this.play(`attack_${number}`, true);
+        this.once(`animationcomplete-attack_${number}`, () => {
+            this.battleMode = false;
+        });
+    };
 
     jump() {
         if (this.body.blocked.down || this.body.touching.down) {

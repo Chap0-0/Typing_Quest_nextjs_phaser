@@ -26,8 +26,9 @@ const config: Phaser.Types.Core.GameConfig = {
     dom: {
         createContainer: true
     },
-  
-  
+    render: {
+        antialias: false,  // Отключает сглаживание
+    },
     physics: {
         default: 'arcade',
         arcade: {

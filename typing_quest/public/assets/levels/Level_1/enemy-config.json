@@ -1,0 +1,30 @@
+{
+    "enemyTypes": [
+        {
+            "type": "mushroom",
+            "frameWidth": 80,
+            "frameHeight": 64,
+            "bodyWidth": 40,
+            "bodyHeight": 34,
+            "gravity": 800,
+            "speed": 100,
+            "patrolDistance": 300,
+            "animations": {
+                "walk": {
+                    "texture": "Mushroom-Run.png",
+                    "startFrame": 0,
+                    "endFrame": 7,
+                    "frameRate": 10,
+                    "repeat": -1
+                },
+                "idle": {
+                    "texture": "Mushroom-Idle.png",
+                    "startFrame": 0,
+                    "endFrame": 6,
+                    "frameRate": 10,
+                    "repeat": -1
+                }
+            }
+        }
+    ]
+} 
