@@ -31,11 +31,10 @@ export class Preloader extends Scene {
         this.load.image('bg-sky', 'intro-bg-sky.png');
         this.load.image('bg-clouds', 'intro-bg-clouds.png');
         this.load.image('bg-mounts', 'intro-bg-mounts.png');
-
     }
 
     create() {
-        // this.scene.start('Intro');
-        this.scene.start('LevelPreloader', { targetLevel: `Level_1` });
+        this.scene.start('Intro');
+        // this.scene.start('LevelPreloader', { targetLevel: `Level_1` });
     }
 }

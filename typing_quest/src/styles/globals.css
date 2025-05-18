@@ -15,6 +15,22 @@ body {
     align-items: center;
 }
 
+@font-face {
+  font-family: 'RuneScape';
+  src: url('/fonts/RuneScape-ENA.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+.form-title {
+  font-family: 'RuneScape', Arial, sans-serif;
+}
+
+.form-button, .form-input, .form-switch {
+  font-family: 'RuneScape', Arial, sans-serif;
+}
+
 .spritePosition {
     margin: 10px 0 0 10px;
     font-size: 0.8em;
@@ -45,4 +61,151 @@ body {
         border: 1px solid rgba(255, 255, 255, 0.3);
         color: rgba(255, 255, 255, 0.3);
     }
+}
+.game-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 999;
+    cursor: default;
+}
+
+.game-form {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+    width: 500px; /* Фиксированная ширина формы */
+    cursor: default;
+}
+.game-form.hidden {
+    display: none;
+}
+
+.game-overlay.visible {
+    opacity: 1;
+}
+
+.form-container {
+    position: relative;
+    width: 100%;
+}
+
+
+.form-container {
+    position: relative;
+    width: 100%;
+    overflow: visible; /* Разрешаем элементам выходить за границы */
+}
+
+.form-background {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.form-content {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+    box-sizing: border-box;
+    padding-top: 60px; /* Увеличиваем отступ сверху для заголовка */
+}
+
+/* Стили для заголовка, который наполовину выходит за форму */
+.title-background {
+    background-image: url('/assets/ui/title-auth.png');
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    padding: 25px 40px; /* Увеличиваем padding */
+    margin-bottom: 30px;
+    text-align: center;
+    position: absolute;
+    top: -2px; /* Выдвигаем заголовок вверх */
+    width: 70%;
+    z-index: 1001; /* Чтобы был поверх формы */
+}
+
+/* Увеличенные инпуты */
+.input-background {
+    background-image: url('/assets/ui/input-auth.png');
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    padding: 12px 10px; /* Увеличиваем padding */
+    margin: 15px; /* Увеличиваем отступы */
+    width: 85%;
+    height: 50px; /* Фиксированная высота */
+    display: flex;
+    align-items: center;
+}
+
+/* Увеличенные кнопки */
+.button-background {
+    background-image: url('/assets/ui/button-auth.png');
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    padding: 10px; /* Увеличиваем padding */
+    margin: 25px 0; /* Увеличиваем отступы */
+    width: 85%;
+    height: 60px; /* Фиксированная высота */
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Увеличенные поля ввода */
+.form-input {
+    padding: 12px 15px;
+    margin: 0;
+    border: none;
+    background: transparent;
+    font-size: 24px; /* Увеличиваем шрифт */
+    outline: none;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+/* Увеличенные кнопки */
+.form-button {
+    background: transparent;
+    border: none;
+    padding: 12px 20px;
+    width: 100%;
+    height: 100%;
+    color: white;
+    font-size: 28px; /* Увеличиваем шрифт */
+    cursor: pointer;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.form-title {
+    color: white;
+    margin: 0;
+    font-size: 28px; /* Увеличиваем шрифт */
+    font-weight: bold;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+/* Остальные стили остаются без изменений */
+.form-switch {
+    color: #000000;
+    text-decoration: none;
+    font-size: 24px; /* Немного увеличиваем */
+    margin-top: 15px;
+    cursor: pointer;
+    transition: color 0.2s;
 }

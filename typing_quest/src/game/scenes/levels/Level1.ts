@@ -1,10 +1,11 @@
 import { Scene, GameObjects, Tilemaps, Sound, Physics } from "phaser";
 import { Character } from "../../entities/Character";
 import { EventBus } from "../../EventBus";
-import { EnemyManager } from "./EnemyManager";
+import { Enemy } from "@/game/entities/Enemy";
+import { EnemyManager } from "./../../systems/EnemyManager";
+import { ScoreManager } from "@/game/systems/ScoreManager";
 
 export class Level_1 extends Scene {
-    // Основные свойства
     private readonly distancePerKey: number = 100;
     private backgroundMusic!: Sound.BaseSound;
     private isAudioPlaying: boolean = true;
@@ -19,7 +20,7 @@ export class Level_1 extends Scene {
     private map!: Tilemaps.Tilemap;
     private enemyManager!: EnemyManager;
     private level_config: any;
-    
+    private scoreManager!: ScoreManager;
     private isBattleMode: boolean = false;
     private battleEnemy: Enemy | null = null;
     private battleSequence: string[] = [];
@@ -27,6 +28,9 @@ export class Level_1 extends Scene {
     private battleSymbolContainer!: GameObjects.Container;
     private battleBackground!: GameObjects.Rectangle;
     private battleDistance: number = 100;
+    private fullSequence: string[] = [];
+    private statsText!: Phaser.GameObjects.Text;
+    private isProcessingInput: boolean = false;
 
     constructor() {
         super("Level_1");
@@ -41,7 +45,9 @@ export class Level_1 extends Scene {
         this.createInputSystem();
         this.createPauseSystem();
         this.createEnemies();
+        this.createStatsDisplay();
 
+        this.scoreManager = new ScoreManager(this);
         // Блокировка специальных клавиш
         this.input.keyboard.on("keydown", (event: KeyboardEvent) => {
             if (event.key === "/" || event.key === "'") {
@@ -55,12 +61,22 @@ export class Level_1 extends Scene {
         if (!this.isBattleMode) {
             this.checkBattleStart();
         }
-
+        this.updateStatsDisplay();
         this.checkZoneIntersections();
         this.character.updateState();
     }
+    private updateStatsDisplay() {
+        if (!this.statsText) return;
 
-    // ===== Основные методы инициализации =====
+        this.statsText.setText(
+            [
+                `Точность: ${this.scoreManager.getAccuracy().toFixed(1)}%`,
+                `Правильно: ${this.scoreManager.getCorrectCount()}`,
+                `Ошибки: ${this.scoreManager.getIncorrectCount()}`,
+                `Всего: ${this.scoreManager.getTotalCount()}`,
+            ].join("  |  ")
+        );
+    }
     private initScene() {
         this.background = this.add
             .image(0, 0, "Level_1_bg")
@@ -68,9 +84,37 @@ export class Level_1 extends Scene {
             .setDisplaySize(this.scale.width, this.scale.height)
             .setScrollFactor(0);
 
-        this.level_config = this.cache.json.get('Level_1');
+        this.level_config = this.cache.json.get("Level_1");
     }
+    private createStatsDisplay() {
+        const interfaceHeight = this.scale.height * 0.4;
+        const interfaceY = this.scale.height - interfaceHeight;
 
+        const statsBg = this.add
+            .rectangle(
+                this.scale.width / 2,
+                interfaceY - 40,
+                350,
+                40,
+                0x333333,
+                0.8
+            )
+            .setScrollFactor(0)
+            .setDepth(99);
+
+        // Создаем текст статистики
+        this.statsText = this.add
+            .text(this.scale.width / 2, interfaceY - 50, "", {
+                fontFamily: "Arial",
+                fontSize: "18px",
+                color: "#ffffff",
+                padding: { x: 10, y: 5 },
+                align: "center",
+            })
+            .setOrigin(0.5, 0)
+            .setScrollFactor(0)
+            .setDepth(100);
+    }
     private createLevelMap() {
         this.map = this.make.tilemap({ key: "Level_1_map" });
         const decors = this.map.addTilesetImage("2", "decors_Level_1");
@@ -251,30 +295,6 @@ export class Level_1 extends Scene {
         this.symbolContainer.x = this.scale.width / 2 - symbolSpacing * 9;
     }
 
-    private handleInput(event: KeyboardEvent | { key: string }) {
-        if (this.isGamePaused || this.isBattleMode) return;
-        if (
-            event.key.toLowerCase() ===
-            this.fullSequence[this.currentInputIndex]
-        ) {
-            this.processCorrectInput();
-        }
-    }
-
-    private processCorrectInput() {
-        this.currentInputIndex++;
-        this.updateSymbolDisplay();
-        this.character.move(this.distancePerKey);
-
-        if (this.currentInputIndex < this.fullSequence.length) {
-            this.time.delayedCall(300, () => {
-                this.handleInput({
-                    key: this.fullSequence[this.currentInputIndex],
-                });
-            });
-        }
-    }
-
     // ===== Система паузы =====
     private createPauseSystem() {
         const pauseButton = this.add
@@ -387,18 +407,110 @@ export class Level_1 extends Scene {
     }
 
     private showLevelComplete() {
+        // Останавливаем физику и ввод
         this.physics.pause();
         this.isGamePaused = true;
         this.character.stopMoving();
         this.backgroundMusic.stop();
 
+        // Отключаем все обработчики ввода
+        this.input.keyboard.off("keydown", this.handleInput);
+        this.input.keyboard.off("keydown", this.handleBattleInput);
+
+        // Записываем результаты
+        this.scoreManager.completeLevel();
+
+        // Создаем график скорости печати
+        const chartCanvas = this.createSpeedChart();
+
+        const stats = {
+            time: this.scoreManager.getTimeFormatted(),
+            accuracy: this.scoreManager.getAccuracy().toFixed(1),
+            speed: this.scoreManager.getAverageSpeed().toFixed(1),
+            score: this.scoreManager.calculateScore(),
+            chart: chartCanvas.toDataURL(),
+        };
+
+        // Показываем окно с результатами
+        this.showResultsWindow(stats);
+    }
+
+    private createSpeedChart(): HTMLCanvasElement {
+        const canvas = document.createElement("canvas");
+        canvas.width = 400;
+        canvas.height = 200;
+        const ctx = canvas.getContext("2d")!;
+
+        const history = this.scoreManager.getTypingSpeedHistory();
+        if (history.length === 0) return canvas;
+
+        // Настройки графика
+        const padding = 20;
+        const graphWidth = canvas.width - 2 * padding;
+        const graphHeight = canvas.height - 2 * padding;
+
+        // Находим максимальные значения
+        const maxTime = Math.max(...history.map((h) => h.time));
+        const maxSpeed = Math.max(...history.map((h) => h.speed), 1);
+
+        // Рисуем оси
+        ctx.strokeStyle = "#FFFFFF";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(padding, padding);
+        ctx.lineTo(padding, canvas.height - padding);
+        ctx.lineTo(canvas.width - padding, canvas.height - padding);
+        ctx.stroke();
+
+        // Подписи осей
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = "10px Arial";
+        ctx.fillText("Скорость (симв/сек)", padding + 5, padding + 10);
+        ctx.fillText("Время (сек)", canvas.width - 40, canvas.height - 5);
+
+        // Рисуем график
+        ctx.strokeStyle = "#4CAF50";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+
+        history.forEach((point, i) => {
+            const x = padding + (point.time / maxTime) * graphWidth;
+            const y =
+                canvas.height -
+                padding -
+                (point.speed / maxSpeed) * graphHeight;
+
+            if (i === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
+        });
+
+        ctx.stroke();
+
+        return canvas;
+    }
+
+    private showResultsWindow(stats: any) {
         const completionWindow = this.add
             .dom(this.scale.width / 2, this.scale.height / 2)
             .createFromHTML(
                 `
-                <div style="background:rgba(0,0,0,0.9); border:2px solid #4CAF50; border-radius:10px; color:white; padding:20px; text-align:center; width:300px;">
+                <div style="background:rgba(0,0,0,0.9); border:2px solid #4CAF50; border-radius:10px; color:white; padding:20px; text-align:center; width:500px;">
                     <h2>Уровень пройден!</h2>
-                    <p>Все последовательности введены</p>
+                    <div style="display: flex; justify-content: space-between; margin: 20px 0;">
+                        <div style="text-align: left;">
+                            <p>Время: ${stats.time}</p>
+                            <p>Точность: ${stats.accuracy}%</p>
+                            <p>Скорость: ${stats.speed} сим/сек</p>
+                            <p style="font-size: 24px; font-weight: bold; margin-top: 10px;">Очки: ${stats.score}</p>
+                        </div>
+                        <div>
+                            <img src="${stats.chart}" style="width: 200px; height: 100px; background: white;" />
+                            <p style="font-size: 12px; margin-top: 5px;">График скорости печати</p>
+                        </div>
+                    </div>
                     <button id="nextLevelBtn" style="background:#4CAF50; color:white; border:none; padding:10px 20px; margin-top:15px; cursor:pointer; border-radius:5px;">На карту</button>
                 </div>
             `
@@ -410,10 +522,24 @@ export class Level_1 extends Scene {
         completionWindow
             .getChildByID("nextLevelBtn")
             ?.addEventListener("click", () => {
+                this.saveScore(stats);
                 this.scene.start("Map");
             });
     }
 
+    private saveScore(stats: any) {
+        // Здесь можно сохранить результаты в localStorage или отправить на сервер
+        const leaderboard = JSON.parse(
+            localStorage.getItem("leaderboard") || []
+        );
+        leaderboard.push({
+            level: "Level_1",
+            score: stats.score,
+            time: stats.time,
+            date: new Date().toISOString(),
+        });
+        localStorage.setItem("leaderboard", JSON.stringify(leaderboard));
+    }
     private checkBattleStart() {
         if (this.isBattleMode) return;
 
@@ -441,10 +567,12 @@ export class Level_1 extends Scene {
         this.character.stopMoving();
         enemy.stopForBattle(this.character.x);
         this.character.setFlipX(enemy.x < this.character.x);
-        
+
         // Берем случайную последовательность из JSON
-        const randomSequence = Phaser.Utils.Array.GetRandom(this.level_config.battleSequences);
-        this.battleSequence = randomSequence.replace(/_/g, '').split('');
+        const randomSequence = Phaser.Utils.Array.GetRandom(
+            this.level_config.battleSequences
+        );
+        this.battleSequence = randomSequence.replace(/_/g, " ").split("");
         this.battleInputIndex = 0;
 
         // Настраиваем камеру для боя
@@ -538,8 +666,40 @@ export class Level_1 extends Scene {
                 xPosition += symbolSpacing;
             });
     }
+    private handleInput(event: KeyboardEvent | { key: string }) {
+        if (this.isGamePaused || this.isBattleMode || this.isProcessingInput)
+            return;
+
+        this.isProcessingInput = true;
+
+        if (
+            event.key.toLowerCase() ===
+            this.fullSequence[this.currentInputIndex]
+        ) {
+            this.scoreManager.recordCorrectChar(false);
+            this.processCorrectInput();
+        } else {
+            this.scoreManager.recordIncorrectChar(false);
+        }
+
+        // Снимаем блокировку после обработки
+        this.time.delayedCall(50, () => {
+            this.isProcessingInput = false;
+        });
+    }
+
     private handleBattleInput(event: KeyboardEvent | { key: string }) {
-        if (event.key.toLowerCase() === this.battleSequence[this.battleInputIndex]) {
+        if (this.isProcessingInput) return;
+        this.isProcessingInput = true;
+
+        if (
+            event.key.toLowerCase() ===
+            this.battleSequence[this.battleInputIndex]
+        ) {
+            // Всегда записываем правильный ввод, кроме последнего символа
+            if (this.battleInputIndex < this.battleSequence.length - 1) {
+                this.scoreManager.recordCorrectChar(true);
+            }
             this.battleInputIndex++;
             this.updateBattleSymbolDisplay();
 
@@ -547,16 +707,34 @@ export class Level_1 extends Scene {
                 this.character.attack();
                 this.finishBattle(true);
             }
+        } else {
+            this.scoreManager.recordIncorrectChar(true);
         }
-    }
 
+        this.time.delayedCall(50, () => {
+            this.isProcessingInput = false;
+        });
+    }
+    private processCorrectInput() {
+        this.currentInputIndex++;
+        this.updateSymbolDisplay();
+        this.character.move(this.distancePerKey);
+
+        // if (this.currentInputIndex < this.fullSequence.length) {
+        //     this.time.delayedCall(300, () => {
+        //         this.handleInput({
+        //             key: this.fullSequence[this.currentInputIndex],
+        //         });
+        //     });
+        // }
+    }
     private finishBattle(success: boolean) {
         if (success && this.battleEnemy) {
             this.battleEnemy.takeDamage();
             this.battleEnemy.body.checkCollision.none = true;
         }
 
-        // Восстанавливаем обычный режим
+        // Восстанавливаем обычный режим с очисткой состояния
         this.isBattleMode = false;
         this.battleEnemy = null;
 
@@ -568,8 +746,15 @@ export class Level_1 extends Scene {
         this.cameras.main.pan(this.character.x, this.character.y, 500);
         this.cameras.main.zoomTo(1.3, 500);
 
-        // Восстанавливаем обычный ввод
+        // Полностью сбрасываем обработчики ввода
         this.input.keyboard.off("keydown", this.handleBattleInput);
-        this.input.keyboard.on("keydown", this.handleInput.bind(this));
+
+        // Важно: обновляем отображение основной последовательности
+        this.updateSymbolDisplay();
+
+        // Переустанавливаем обработчик с небольшой задержкой
+        this.time.delayedCall(100, () => {
+            this.input.keyboard.on("keydown", this.handleInput.bind(this));
+        });
     }
 }

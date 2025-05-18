@@ -1,10 +1,20 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
+import * as cookieParser from 'cookie-parser';
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.use(cookieParser());
   const configService = app.get(ConfigService);
-
-  await app.listen(4000, '0.0.0.0');
+  // Настройка CORS
+  app.enableCors({
+    origin: 'http://localhost:8080', // или ваш фронтенд URL
+    credentials: true,
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    allowedHeaders: 'Content-Type, Authorization',
+  });
+  
+  await app.listen(3000);
 }
 bootstrap();

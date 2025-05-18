@@ -1,7 +1,11 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
+import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
+import { LevelsModule } from './levels/levels.module';
+import { ResultsModule } from './results/results.module';
+import { AchievementsModule } from './achievements/achievements.module';
 
 @Module({
   imports: [
@@ -16,7 +20,11 @@ import { UsersModule } from './users/users.module';
       autoLoadEntities: true,
       synchronize: true,
     }),
-    UsersModule, // Подключаем модуль пользователей
+    AuthModule,
+    UsersModule,
+    LevelsModule,
+    ResultsModule,
+    AchievementsModule,
   ],
 })
 export class AppModule {}

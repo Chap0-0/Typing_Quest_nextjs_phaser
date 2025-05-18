@@ -3,7 +3,6 @@ import { Scene, Physics } from "phaser";
 export class Character extends Physics.Arcade.Sprite {
     private isMoving: boolean = false;
     private isRunning: boolean = false;
-    private remainingDistance: number = 0;
     private walkSpeed: number = 200;
     private runSpeed: number = 400;
     private runThreshold: number = 300;

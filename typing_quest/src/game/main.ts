@@ -39,6 +39,7 @@ const config: Phaser.Types.Core.GameConfig = {
         mode: Phaser.Scale.RESIZE,  // Автоматическое изменение размера
         autoCenter: Phaser.Scale.CENTER_BOTH,  // Центрирование
     },
+    
 };
 
 const StartGame = (parent: string) => {

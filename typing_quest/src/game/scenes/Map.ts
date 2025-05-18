@@ -1,186 +1,194 @@
-import { Scene, GameObjects, Tweens } from 'phaser';
+import { Scene } from 'phaser';
 
 export class Map extends Scene {
-    private levelNodes: GameObjects.Sprite[] = [];
-    private levelLabels: GameObjects.Text[] = [];
-    private background: GameObjects.TileSprite;
-    private clouds: GameObjects.TileSprite;
-    private title: GameObjects.Text;
-    private selectedNode: number = -1;
-    private lockIcon: GameObjects.Sprite;
-
-    private readonly levelConfig = [
-        { x: 0.2, y: 0.3, name: "Уровень 1", locked: false },
-        { x: 0.4, y: 0.5, name: "Уровень 2", locked: true },
-        { x: 0.6, y: 0.3, name: "Уровень 3", locked: true },
-        { x: 0.8, y: 0.5, name: "Уровень 4", locked: true }
-    ];
+    private map!: Phaser.Tilemaps.Tilemap;
+    private levelMarkers: Phaser.GameObjects.Arc[] = [];
+    private levelInfo: Phaser.GameObjects.Text | null = null;
+    private currentLevelIndex: number = 0;
 
     constructor() {
         super('Map');
     }
 
     preload() {
-        this.load.image('mapBackground', 'assets/intro/intro-bg.png');
-        this.load.image('clouds', 'assets/intro/intro-bg-clouds.png');
-        this.load.image('levelIcon', 'assets/intro/logo.png');
-        this.load.image('levelLocked', 'assets/intro/logo.png');
+        this.load.image('tiles_1', 'assets/map/fantasyhextiles_v3.png');
+        this.load.image('tiles_2', 'assets/map/fantasyhextiles_randr_4_v1.png');
+        this.load.tilemapTiledJSON('map', 'assets/map/Main_Map.tmj');
     }
 
     create() {
-        // Фон с параллакс-эффектом
-        this.background = this.add.tileSprite(0, 0, this.scale.width, this.scale.height, 'mapBackground')
-            .setOrigin(0, 0)
-            .setScrollFactor(0);
-
-        this.clouds = this.add.tileSprite(0, 0, this.scale.width, this.scale.height, 'clouds')
-            .setOrigin(0, 0)
-            .setScrollFactor(0)
-            .setAlpha(0.7);
-
-        // Заголовок
-        this.title = this.add.text(this.scale.width/2, 80, 'Выберите уровень', {
-            fontFamily: 'Arial',
-            fontSize: '48px',
-            color: '#ffffff',
-            stroke: '#000000',
-            strokeThickness: 4,
-            shadow: { offsetX: 2, offsetY: 2, color: '#000', blur: 3, fill: true }
-        }).setOrigin(0.5);
-
-        // Создание узлов уровней
-        this.levelConfig.forEach((config, index) => {
-            const { x, y } = this.getPosition(config.x, config.y);
-            const node = this.add.sprite(x, y, 'levelIcon')
-                .setScale(0.5)
-                .setInteractive({ useHandCursor: true })
-                .setData('locked', config.locked);
-
-            if (config.locked) {
-                this.lockIcon = this.add.sprite(x, y, 'levelLocked').setScale(0.5);
-                node.setTint(0x666666);
-            }
-
-            // Анимация при наведении
-            node.on('pointerover', () => this.hoverNode(node, index));
-            node.on('pointerout', () => this.unhoverNode(node, index));
-            node.on('pointerdown', () => this.selectLevel(index));
-
-            // Метка уровня
-            const label = this.add.text(x, y + 60, config.name, {
-                fontFamily: 'Arial',
-                fontSize: '18px',
-                color: config.locked ? '#888888' : '#ffffff',
-                align: 'center',
-                wordWrap: { width: 150, useAdvancedWrap: true }
-            }).setOrigin(0.5).setAlpha(0);
-
-            this.levelNodes.push(node);
-            this.levelLabels.push(label);
-        });
-
-
-        // Анимация появления
-        this.tweens.add({
-            targets: this.levelNodes,
-            scale: { from: 0, to: 0.5 },
-            duration: 600,
-            ease: 'Back.out',
-            stagger: 150
-        });
-
-        this.tweens.add({
-            targets: this.levelLabels,
-            alpha: { from: 0, to: 1 },
-            duration: 800,
-            delay: 1000
-        });
-
-        // Параллакс-эффект
-        this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
-            this.background.tilePositionX = pointer.x * 0.02;
-            this.background.tilePositionY = pointer.y * 0.02;
-            this.clouds.tilePositionX = pointer.x * 0.05;
-        });
-    }
-
-    update() {
-        // Плавное движение облаков
-        this.clouds.tilePositionX += 0.2;
-    }
-
-    private hoverNode(node: GameObjects.Sprite, index: number) {
-        if (node.getData('locked')) return;
-
-        this.tweens.add({
-            targets: node,
-            scale: 0.6,
-            duration: 200,
-            ease: 'Sine.out'
-        });
-
-        this.tweens.add({
-            targets: this.levelLabels[index],
-            y: this.levelLabels[index].y + 10,
-            duration: 200,
-            ease: 'Sine.out'
-        });
-    }
-
-    private unhoverNode(node: GameObjects.Sprite, index: number) {
-        if (node.getData('locked')) return;
-
-        this.tweens.add({
-            targets: node,
-            scale: 0.5,
-            duration: 200,
-            ease: 'Sine.in'
-        });
-
-        this.tweens.add({
-            targets: this.levelLabels[index],
-            y: this.levelLabels[index].y - 10,
-            duration: 200,
-            ease: 'Sine.in'
-        });
-    }
-
-    private selectLevel(index: number) {
-        const node = this.levelNodes[index];
+        // 1. Создаем тайлмап
+        this.map = this.make.tilemap({ key: 'map' });
         
-        if (node.getData('locked')) {
-            // Анимация заблокированного уровня
-            this.tweens.add({
-                targets: node,
-                x: '+=10',
-                yoyo: true,
-                duration: 80,
-                repeat: 3
+        // 2. Добавляем тайлсеты
+        const tileset1 = this.map.addTilesetImage('tiles_1', 'tiles_1');
+        const tileset2 = this.map.addTilesetImage('tiles_2', 'tiles_2');
+        const tilesets = [tileset1, tileset2];
+
+        // 3. Создаем слои
+        this.map.createLayer('bg', tilesets, 0, 0).setScale(2);
+        this.map.createLayer('rivers', tilesets, 0, 0).setScale(2);
+        this.map.createLayer('main', tilesets, 0, 0).setScale(2);
+
+        // 4. Обрабатываем объекты уровней
+        this.processLevelObjects();
+        const logoutButton = this.add.text(200, 200, 'Выход', { 
+            fontSize: '24px', 
+            color: '#ffffff',
+            backgroundColor: '#ff0000',
+            padding: { x: 10, y: 5 }
+        })
+        .setInteractive()
+        .on('pointerdown', async () => {
+            try {
+            await fetch('http://localhost:3000/auth/logout', {
+                method: 'POST',
+                credentials: 'include'
             });
+            localStorage.removeItem('user');
+            this.scene.start('Intro');
+            } catch (error) {
+            console.error('Ошибка выхода:', error);
+            }
+        });
+        // 5. Фокусируемся на первом уровне
+        if (this.levelMarkers.length > 0) {
+            this.focusOnLevel(0);
+        }
+    }
+
+    private processLevelObjects() {
+        const levelObjects = this.map.getObjectLayer('levels')?.objects;
+        if (!levelObjects || levelObjects.length === 0) {
+            console.warn('Не найдены объекты уровней');
             return;
         }
 
-        this.selectedNode = index;
-        
-        // Анимация выбора
-        this.tweens.add({
-            targets: node,
-            scale: 0.7,
-            duration: 150,
-            yoyo: true,
-            onComplete: () => {
-                this.scene.start('LevelPreloader', { 
-                    targetLevel: `Level_${index + 1}`,
-                    levelName: this.levelConfig[index].name
-                });
+        levelObjects.forEach((obj, index) => {
+            const worldPos = this.map.tileToWorldXY(
+                obj.x / this.map.tileWidth, 
+                obj.y / this.map.tileHeight
+            );
+            
+            if (!worldPos) {
+                console.error('Не удалось преобразовать координаты для уровня', index);
+                return;
             }
+
+            // Создаем маркер уровня
+            const marker = this.createLevelMarker(worldPos.x, worldPos.y, index, obj.properties);
+            this.levelMarkers.push(marker);
         });
     }
 
-    private getPosition(relX: number, relY: number) {
-        return {
-            x: relX * this.scale.width,
-            y: relY * this.scale.height
-        };
+    private createLevelMarker(x: number, y: number, index: number, properties: any): Phaser.GameObjects.Arc {
+        // Основной маркер
+        const marker = this.add.circle(x, y, 25, 0xff0000, 0.7)
+            .setInteractive()
+            .setData('levelData', properties)
+            .setData('levelIndex', index)
+            .setDepth(1000);
+
+        // Обводка маркера
+        this.add.circle(x, y, 25, 0x000000, 0)
+            .setStrokeStyle(3, 0xffffff)
+            .setDepth(1000);
+
+        // Текст с номером уровня
+        const levelText = this.add.text(x, y - 15, `${index + 1}`, {
+            font: '20px Arial',
+            color: '#ffffff',
+            stroke: '#000000',
+            strokeThickness: 3
+        })
+        .setOrigin(0.5)
+        .setDepth(1001);
+
+        // Обработчики событий
+        marker.on('pointerover', () => {
+            this.focusOnLevel(index);
+            this.showLevelInfo(marker);
+        });
+        
+        marker.on('pointerout', () => {
+            this.hideLevelInfo();
+        });
+        
+        marker.on('pointerdown', () => {
+            this.loadLevelDescription(marker);
+        });
+
+        return marker;
+    }
+
+    private focusOnLevel(levelIndex: number) {
+        if (levelIndex < 0 || levelIndex >= this.levelMarkers.length) return;
+
+        this.currentLevelIndex = levelIndex;
+        const marker = this.levelMarkers[levelIndex];
+        
+        // Плавное перемещение камеры к уровню
+        this.cameras.main.pan(
+            marker.x,
+            marker.y,
+            500,
+            'Power2'
+        ).setZoom(1.5);
+        // Подсветка текущего уровня
+        this.levelMarkers.forEach((m, i) => {
+            m.fillColor = i === levelIndex ? 0x00ff00 : 0xff0000;
+            m.fillAlpha = i === levelIndex ? 0.9 : 0.7;
+        });
+    }
+
+    private showLevelInfo(marker: Phaser.GameObjects.Arc) {
+        const levelData = marker.getData('levelData');
+        const levelName = levelData.find((prop: any) => prop.name === 'name')?.value || `Уровень ${marker.getData('levelIndex') + 1}`;
+
+        if (this.levelInfo) {
+            this.levelInfo.destroy();
+        }
+
+        this.levelInfo = this.add.text(
+            marker.x,
+            marker.y + 40,
+            levelName,
+            { 
+                font: '18px Arial',
+                color: '#ffffff',
+                backgroundColor: '#333333',
+                padding: { x: 15, y: 8 }
+            }
+        )
+        .setOrigin(0.5)
+        .setDepth(1001);
+    }
+
+    private hideLevelInfo() {
+        if (this.levelInfo) {
+            this.levelInfo.destroy();
+            this.levelInfo = null;
+        }
+    }
+
+    private async loadLevelDescription(marker: Phaser.GameObjects.Arc) {
+        const levelData = marker.getData('levelData');
+        const levelName = levelData.find((prop: any) => prop.name === 'name')?.value;
+        
+        if (!levelName) {
+            console.error('У уровня нет свойства name');
+            return;
+        }
+
+        try {
+            // Здесь можно добавить загрузку данных уровня
+            console.log(`Загрузка уровня: ${levelName}`);
+            
+            // Пример перехода на сцену уровня
+        this.scene.start('LevelPreloader', { targetLevel: `${levelName}` });
+            
+        } catch (error) {
+            console.error('Ошибка загрузки уровня:', error);
+        }
     }
 }
