@@ -115,7 +115,7 @@ export class Intro extends Scene {
 
         const buttonText = this.add
             .text(0, 0, text, {
-                font: "24px RuneScape",
+                font: "36px RuneScape",
                 color: "#602b2c",
             })
             .setOrigin(0.5);

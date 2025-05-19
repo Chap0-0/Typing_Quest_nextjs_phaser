@@ -18,7 +18,7 @@ export class Level extends Scene {
     private enemyManager!: EnemyManager;
     private level_config: any;
     private scoreManager!: ScoreManager;
-    private battleDistance: number = 50;
+    private battleDistance: number = 75;
     private battleSystem: BattleSystem;
     private inputSystem!: InputSystem;
     private uiSystem!: UISystem;

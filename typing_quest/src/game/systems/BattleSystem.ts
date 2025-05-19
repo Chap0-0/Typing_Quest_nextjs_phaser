@@ -239,6 +239,7 @@ export class BattleSystem {
         if (!this.isBattleInputActive || this.isProcessingInput) return;
 
         if (event.key.toLowerCase() === this.battleSequence[this.battleInputIndex]) {
+            
             // Записываем правильный ввод
             this.scoreManager.recordCorrectChar(true);
             

@@ -51,12 +51,12 @@ export class UISystem {
 
         this.livesText = this.scene.add.text(
             this.scene.scale.width / 2,
-            this.scene.scale.height / 6,
+            this.scene.scale.height - 300,
             "Lives: 5",
             {
                 fontFamily: "RuneScape",
                 fontSize: "24px",
-                color: "#ff0000",
+                color: "#000000",
             }
         )
         .setScrollFactor(0)
