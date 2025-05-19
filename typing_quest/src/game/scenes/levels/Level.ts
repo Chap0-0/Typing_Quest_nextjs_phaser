@@ -168,7 +168,7 @@ export class Level extends Scene {
     private togglePause() {
         this.isGamePaused = !this.isGamePaused;
         this.isGamePaused ? this.physics.pause() : this.physics.resume();
-        this.pauseMenu.setVisible(this.isGamePaused);
+        this.uiSystem.pauseMenu.setVisible(this.isGamePaused);
     }
 
     // ===== Аудио система =====

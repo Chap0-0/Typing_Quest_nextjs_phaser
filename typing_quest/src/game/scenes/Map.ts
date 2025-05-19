@@ -304,7 +304,7 @@ export class Map extends Scene {
             marker.y + 40,
             levelName,
             { 
-                font: '18px Arial',
+                font: '18px RuneScape',
                 color: '#ffffff',
                 backgroundColor: '#333333',
                 padding: { x: 15, y: 8 }

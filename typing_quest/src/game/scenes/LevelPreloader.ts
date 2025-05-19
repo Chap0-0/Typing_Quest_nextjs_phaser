@@ -119,6 +119,7 @@ export class LevelPreloader extends Scene {
         this.load.audio("backgroundMusic", `${levelName}.mp3`);
         this.load.setPath(""); 
         this.load.image('input_bg', 'assets/ui/scroll.png');
+        this.load.image('stats', 'assets/ui/input-auth.png')
         this.load.image('pause_button', 'assets/ui/pause_button.png');
     }
 }

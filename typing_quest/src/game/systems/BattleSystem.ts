@@ -111,7 +111,7 @@ export class BattleSystem {
 
         const symbolStyle = {
             fontSize: "32px",
-            fontFamily: "Arial",
+            fontFamily: "RuneScape",
             color: "#FF5555",
         };
         const currentStyle = {

@@ -64,8 +64,8 @@ export class InputSystem {
         this.symbolContainer.removeAll(true);
 
         const symbolStyle = {
-            fontSize: "32px",
-            fontFamily: "Arial",
+            fontSize: "48px",
+            fontFamily: "RuneScape",
             color: "#777777",
         };
         const currentStyle = {

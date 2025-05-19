@@ -4,47 +4,48 @@ import { ScoreManager } from "@/game/systems/ScoreManager";
 export class UISystem {
     private scene: Scene;
     private statsText!: GameObjects.Text;
-    private pauseMenu!: GameObjects.DOMElement;
     private completionWindow!: GameObjects.DOMElement;
     private symbolContainer!: GameObjects.Container;
-
+    
+    public pauseMenu!: GameObjects.DOMElement;
     constructor(scene: Scene) {
         this.scene = scene;
     }
 
     // ===== Система статистики =====
     public createStatsDisplay() {
-        const interfaceHeight = this.scene.scale.height * 0.4;
+        const interfaceHeight = this.scene.scale.height * 0.2;
         const interfaceY = this.scene.scale.height - interfaceHeight;
 
-        // Фон статистики
-        this.scene.add.rectangle(
+        // Фон статистики (используем такое же изображение как для ввода)
+        const bg = this.scene.add.image(
             this.scene.scale.width / 2,
-            interfaceY - 40,
-            350,
-            40,
-            0x333333,
-            0.8
+            interfaceY - 60,
+            "stats"
         )
+        .setDisplaySize(460, 60)
         .setScrollFactor(0)
-        .setDepth(99);
+        .setDepth(105);
 
-        // Текст статистики
+        // Текст статистики (черные буквы)
         this.statsText = this.scene.add.text(
             this.scene.scale.width / 2, 
-            interfaceY - 50, 
+            interfaceY - 70, 
             "", 
             {
-                fontFamily: "Arial",
-                fontSize: "18px",
-                color: "#ffffff",
+                fontFamily: "RuneScape",
+                fontSize: "20px",
+                color: "#000000", // Черный цвет текста
                 padding: { x: 10, y: 5 },
                 align: "center",
             }
         )
         .setOrigin(0.5, 0)
         .setScrollFactor(0)
-        .setDepth(100);
+        .setDepth(106);
+
+        // Добавляем небольшую тень для лучшей читаемости
+        this.statsText.setShadow(1, 1, 'rgba(255,255,255,0.5)', 1);
     }
 
     public updateStatsDisplay(scoreManager: ScoreManager) {
@@ -130,13 +131,12 @@ export class UISystem {
 
         const symbolStyle = {
             fontSize: "32px",
-            fontFamily: "Arial",
+            fontFamily: "RuneScape",
             color: "#777777",
         };
         const currentStyle = {
             ...symbolStyle,
             color: "#000000",
-            fontWeight: "bold",
         };
         const pastStyle = { ...symbolStyle, color: "#CC2D39" };
 
@@ -248,7 +248,7 @@ export class UISystem {
 
         // Подписи осей
         ctx.fillStyle = "#FFFFFF";
-        ctx.font = "10px Arial";
+        ctx.font = "10px RuneScape";
         ctx.fillText("Скорость (симв/сек)", padding + 5, padding + 10);
         ctx.fillText("Время (сек)", canvas.width - 40, canvas.height - 5);
 
