@@ -3,7 +3,7 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "auth-ui.tmx",
+    "activeFile": "C:/Users/Chapiko/Desktop/Дипломка/Project/typing_quest/public/assets/levels/Level_1/level_1.tmx",
     "automapping.whileDrawing": true,
     "expandedProjectPaths": [
         "."
@@ -11,6 +11,12 @@
     "exportAsImage.useCurrentScale": true,
     "file.lastUsedOpenFilter": "Все файлы (*)",
     "fileStates": {
+        "#Intro-tiles": {
+            "scaleInDock": 1.5
+        },
+        "#mainlev_build": {
+            "scaleInDock": 1
+        },
         "#ui-components": {
             "scaleInDock": 1
         },
@@ -29,6 +35,17 @@
         "C:/Users/Chapiko/Desktop/Дипломка/Project/typing_quest/public/assets/levels/Level_1/Level_1.tmj#2": {
             "scaleInDock": 1
         },
+        "C:/Users/Chapiko/Desktop/Дипломка/Project/typing_quest/public/assets/levels/Level_1/level_1.tmx": {
+            "scale": 0.5,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 618,
+                "y": 196
+            }
+        },
+        "C:/Users/Chapiko/Desktop/Дипломка/Project/typing_quest/public/assets/levels/Level_1/level_1.tmx#Intro-tiles": {
+            "scaleInDock": 1.5
+        },
         "C:/Users/Chapiko/Desktop/Дипломка/Project/typing_quest/public/assets/map/Main_Map..tmj": {
             "scale": 0.75,
             "selectedLayer": 0,
@@ -44,11 +61,11 @@
             "scaleInDock": 1
         },
         "C:/Users/Chapiko/Desktop/Дипломка/Project/typing_quest/public/assets/map/Main_Map.tmj": {
-            "scale": 0.5,
+            "scale": 1,
             "selectedLayer": 3,
             "viewCenter": {
-                "x": 726,
-                "y": 408
+                "x": 618,
+                "y": 565
             }
         },
         "C:/Users/Chapiko/Desktop/Дипломка/Project/typing_quest/public/assets/map/Main_Map.tmj#tiles_1": {
@@ -57,6 +74,25 @@
         },
         "C:/Users/Chapiko/Desktop/Дипломка/Project/typing_quest/public/assets/map/Main_Map.tmj#tiles_2": {
             "scaleInDock": 1
+        },
+        "C:/Users/Chapiko/Desktop/Дипломка/Project/typing_quest/public/assets/ui/info-ui.tmj": {
+            "scale": 1,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 241,
+                "y": -66
+            }
+        },
+        "C:/Users/Chapiko/Desktop/Дипломка/Project/typing_quest/public/assets/ui/info-ui.tmx": {
+            "expandedObjectLayers": [
+                4
+            ],
+            "scale": 3,
+            "selectedLayer": 2,
+            "viewCenter": {
+                "x": 79.83333333333334,
+                "y": 99.66666666666666
+            }
         },
         "auth-ui.tmj": {
             "scale": 3,
@@ -81,8 +117,8 @@
             "scale": 3,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 79.83333333333334,
-                "y": 99.66666666666666
+                "x": 80,
+                "y": 99.66666666666667
             }
         },
         "register-ui.tmx": {
@@ -100,31 +136,37 @@
             "scaleInDock": 2
         }
     },
-    "last.exportedFilePath": "C:/Users/Chapiko/Desktop/Дипломка/Project/typing_quest/public/assets/intro",
+    "last.exportedFilePath": "C:/Users/Chapiko/Desktop/Дипломка/Project/typing_quest/public/assets/ui",
     "last.imagePath": "C:/Users/Chapiko/Desktop/Дипломка/Project/typing_quest/public/assets/intro",
-    "map.height": 25,
+    "map.fixedSize": false,
+    "map.height": 34,
     "map.lastUsedExportFilter": "JSON map-файлы (*.tmj *.json)",
-    "map.lastUsedFormat": "json",
-    "map.tileHeight": 8,
-    "map.tileWidth": 8,
-    "map.width": 20,
+    "map.lastUsedFormat": "tmx",
+    "map.tileHeight": 16,
+    "map.tileWidth": 16,
+    "map.width": 60,
     "openFiles": [
-        "register-ui.tmj",
-        "auth-ui.tmx"
+        "C:/Users/Chapiko/Desktop/Дипломка/Project/typing_quest/public/assets/ui/info-ui.tmx",
+        "C:/Users/Chapiko/Desktop/Дипломка/Project/typing_quest/public/assets/ui/info-ui.tmj",
+        "C:/Users/Chapiko/Desktop/Дипломка/Project/typing_quest/public/assets/levels/Level_1/level_1.tmx"
     ],
     "project": "auth-ui.tiled-project",
     "recentFiles": [
-        "register-ui.tmj",
+        "C:/Users/Chapiko/Desktop/Дипломка/Project/typing_quest/public/assets/ui/info-ui.tmx",
+        "C:/Users/Chapiko/Desktop/Дипломка/Project/typing_quest/public/assets/ui/info-ui.tmj",
+        "C:/Users/Chapiko/Desktop/Дипломка/Project/typing_quest/public/assets/levels/Level_1/level_1.tmx",
+        "register-ui.tmx",
         "auth-ui.tmx",
         "C:/Users/Chapiko/Desktop/Дипломка/Project/typing_quest/public/assets/map/Main_Map.tmj",
+        "register-ui.tmj",
         "C:/Users/Chapiko/Desktop/Дипломка/Project/typing_quest/public/assets/map/Main_Map..tmj",
         "C:/Users/Chapiko/Desktop/Дипломка/Project/typing_quest/public/assets/levels/Level_1/Level_1.tmj",
         "auth-ui.tmj"
     ],
     "tileset.embedInMap": true,
-    "tileset.margin": 8,
+    "tileset.margin": 0,
     "tileset.tileSize": {
-        "height": 8,
-        "width": 8
+        "height": 16,
+        "width": 16
     }
 }

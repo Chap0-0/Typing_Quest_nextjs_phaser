@@ -457,8 +457,6 @@ export class Intro extends Scene {
         const data = await response.json();
         console.log('Успешная регистрация:', data);
         this.hideForm();
-
-        // Закрываем форму после успешной регистрации
         this.scene.start('Map');
         
         // Здесь можно сохранить accessToken в памяти для последующих запросов

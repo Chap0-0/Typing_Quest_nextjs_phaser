@@ -2,7 +2,7 @@
 import { Physics, Scene } from "phaser";
 
 export class Enemy extends Physics.Arcade.Sprite {
-    private isAlive: boolean = true;
+    public isAlive: boolean = true;
     private bodyWidth: number;
     private bodyHeight: number;
     private currentDirection: number = -1;

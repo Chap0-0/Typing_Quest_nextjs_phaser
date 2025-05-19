@@ -51,7 +51,7 @@ export class LevelPreloader extends Scene {
         this.load.once('complete', () => {
             this.createEnemyAnimations();
             Character.createAnimations(this);
-            this.scene.start(this.targetLevel);
+            this.scene.start('Level', { levelName: this.targetLevel });
         });
         this.load.start();
     }

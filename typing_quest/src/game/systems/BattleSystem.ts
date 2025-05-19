@@ -1,97 +1,229 @@
-import { Enemy } from "../entities/Enemy";
-import { EventBus } from "../EventBus";
-
-interface BattleConfig {
-    sequences: string[];
-    distance: number;
-}
+import { Scene, GameObjects, Sound, Physics } from "phaser";
+import { Character } from "../entities/Character";
+import { Enemy } from "@/game/entities/Enemy";
+import { ScoreManager } from "@/game/systems/ScoreManager";
+import { InputSystem } from "./InputSystem";
 
 export class BattleSystem {
-    private currentEnemy: Enemy | null = null;
-    private currentSequence: string[] = [];
-    private currentIndex = 0;
-    private isActive = false;
-
-    constructor(private config: BattleConfig) {
-        this.setupEventListeners();
+    private scene: Scene;
+    private character: Character;
+    private scoreManager: ScoreManager;
+    private enemyManager: any; // Можно типизировать точнее
+    private inputSystem: InputSystem;
+    public isBattleMode: boolean = false;
+    private battleEnemy: Enemy | null = null;
+    private battleSequence: string[] = [];
+    private battleInputIndex: number = 0;
+    private battleSymbolContainer!: GameObjects.Container;
+    private battleBackground!: GameObjects.Rectangle;
+    private isProcessingInput: boolean = false;
+    constructor(
+            scene: Scene,
+            character: Character,
+            enemyManager: any,
+            scoreManager: ScoreManager,
+            inputSystem: InputSystem
+        ) {
+        this.scene = scene;
+        this.character = character;
+        this.enemyManager = enemyManager;
+        this.scoreManager = scoreManager;
+        this.inputSystem = inputSystem;
     }
 
-    private setupEventListeners() {
-        EventBus.on('enemy-detected', (enemy: Enemy, characterPos: { x: number }) => {
-            if (this.isInBattleRange(enemy, characterPos)) {
-                this.startBattle(enemy);
-            }
-        });
+    public checkBattleStart(
+        battleDistance: number = 100,
+        battleSequences: string[] = []
+    ) {
+        if (this.isBattleMode) return;
 
-        EventBus.on('battle-input', (key: string) => {
-            if (this.isActive) this.processInput(key);
-        });
+        this.enemyManager
+            .getEnemies()
+            .getChildren()
+            .forEach((enemy: Enemy) => {
+                if (
+                    enemy.isAlive &&
+                    Phaser.Math.Distance.Between(
+                        this.character.x,
+                        this.character.y,
+                        enemy.x,
+                        enemy.y
+                    ) <= battleDistance
+                ) {
+                    this.startBattle(enemy, battleSequences);
+                }
+            });
     }
 
-    private isInBattleRange(enemy: Enemy, characterPos: { x: number }): boolean {
-        return Phaser.Math.Distance.Between(
-            enemy.x, enemy.y,
-            characterPos.x, enemy.y
-        ) <= this.config.distance;
+    public startBattle(enemy: Enemy, battleSequences: string[] = []) {
+        // Сохраняем оригинальный обработчик
+        this.inputSystem.unregisterInputHandler();
+        this.isBattleMode = true;
+        this.battleEnemy = enemy;
+        this.character.stopMoving();
+        enemy.stopForBattle(this.character.x);
+        this.character.setFlipX(enemy.x < this.character.x);
+
+        // Выбираем случайную последовательность для боя
+        const randomSequence = Phaser.Utils.Array.GetRandom(battleSequences);
+        this.battleSequence = randomSequence.replace(/_/g, " ").split("");
+        this.battleInputIndex = 0;
+
+        // Настройка камеры для боя
+        this.scene.cameras.main.zoomTo(2, 500);
+
+        // Создание интерфейса боя
+        this.createBattleInterface();
+
+        // Переключение обработчиков ввода
+        this.scene.input.keyboard?.off('keydown');
+        this.scene.input.keyboard?.on('keydown', this.handleBattleInput.bind(this));
     }
 
-    private startBattle(enemy: Enemy) {
-        this.currentEnemy = enemy;
-        this.isActive = true;
-        this.currentSequence = this.generateSequence();
-        this.currentIndex = 0;
+    private createBattleInterface() {
+        // Фон для интерфейса боя
+        this.battleBackground = this.scene.add
+            .rectangle(
+                this.scene.scale.width / 2,
+                this.scene.scale.height * 0.3,
+                this.scene.scale.width,
+                80,
+                0x222222,
+                0.8
+            )
+            .setDepth(103)
+            .setScrollFactor(0);
 
-        EventBus.emit('battle-toggle', true);
-        EventBus.emit('sequence-update', {
-            type: 'battle',
-            sequence: this.currentSequence,
-            currentIndex: this.currentIndex
-        });
+        // Контейнер для символов
+        this.battleSymbolContainer = this.scene.add
+            .container(
+                this.scene.scale.width / 2,
+                this.scene.scale.height * 0.3
+            )
+            .setDepth(104)
+            .setScrollFactor(0);
 
-        // Оповещаем других о начале боя
-        EventBus.emit('battle-state', { isActive: true, enemy });
+        this.updateBattleSymbolDisplay();
     }
 
-    private generateSequence(): string[] {
-        const randomSeq = Phaser.Utils.Array.GetRandom(this.config.sequences);
-        return randomSeq.replace(/_/g, '').split('');
-    }
+    private updateBattleSymbolDisplay() {
+        this.battleSymbolContainer.removeAll(true);
 
-    private processInput(key: string) {
-        if (key === this.currentSequence[this.currentIndex]) {
-            this.currentIndex++;
-            
-            EventBus.emit('sequence-update', {
-                type: 'battle',
-                sequence: this.currentSequence,
-                currentIndex: this.currentIndex
+        const symbolStyle = {
+            fontSize: "32px",
+            fontFamily: "Arial",
+            color: "#FF5555",
+        };
+        const currentStyle = {
+            ...symbolStyle,
+            color: "#FFFFFF",
+            fontWeight: "bold",
+        };
+        const pastStyle = { ...symbolStyle, color: "#FF0000" };
+
+        const symbolSpacing = 36;
+        let xPosition = -((this.battleSequence.length - 1) * symbolSpacing) / 2;
+
+        // Прошлые символы
+        this.battleSequence
+            .slice(0, this.battleInputIndex)
+            .forEach((symbol) => {
+                this.battleSymbolContainer.add(
+                    this.scene.add
+                        .text(xPosition, 0, symbol, pastStyle)
+                        .setOrigin(0.5)
+                );
+                xPosition += symbolSpacing;
             });
 
-            if (this.currentIndex >= this.currentSequence.length) {
-                this.completeBattle(true);
+        // Текущий символ
+        if (this.battleInputIndex < this.battleSequence.length) {
+            this.battleSymbolContainer.add(
+                this.scene.add
+                    .text(
+                        xPosition,
+                        0,
+                        this.battleSequence[this.battleInputIndex],
+                        currentStyle
+                    )
+                    .setOrigin(0.5)
+            );
+            xPosition += symbolSpacing;
+        }
+
+        // Будущие символы
+        this.battleSequence
+            .slice(this.battleInputIndex + 1)
+            .forEach((symbol) => {
+                this.battleSymbolContainer.add(
+                    this.scene.add
+                        .text(xPosition, 0, symbol, symbolStyle)
+                        .setOrigin(0.5)
+                );
+                xPosition += symbolSpacing;
+            });
+    }
+
+    public handleBattleInput(event: KeyboardEvent) {
+        if (this.isProcessingInput) return;
+        this.isProcessingInput = true;
+
+        if (
+            event.key.toLowerCase() ===
+            this.battleSequence[this.battleInputIndex]
+        ) {
+            // Записываем правильный ввод (кроме последнего символа)
+            if (this.battleInputIndex < this.battleSequence.length - 1) {
+                this.scoreManager.recordCorrectChar(true);
             }
+
+            this.battleInputIndex++;
+            this.updateBattleSymbolDisplay();
+
+            if (this.battleInputIndex >= this.battleSequence.length) {
+                this.character.attack();
+                this.finishBattle(true);
+            }
+        } else {
+            this.scoreManager.recordIncorrectChar(true);
         }
+
+        this.scene.time.delayedCall(50, () => {
+            this.isProcessingInput = false;
+        });
     }
 
-    private completeBattle(victory: boolean) {
-        if (victory && this.currentEnemy) {
-            EventBus.emit('enemy-defeated', this.currentEnemy);
+    private finishBattle(success: boolean) {
+        if (success && this.battleEnemy) {
+            this.battleEnemy.takeDamage();
+            this.battleEnemy.body.checkCollision.none = true;
         }
 
-        this.reset();
-        EventBus.emit('battle-toggle', false);
-        EventBus.emit('battle-state', { isActive: false });
+        // Сброс состояния боя
+        this.isBattleMode = false;
+        this.battleEnemy = null;
+
+        // Удаление интерфейса боя
+        this.battleBackground.destroy();
+        this.battleSymbolContainer.destroy();
+
+        // Восстановление камеры
+        this.scene.cameras.main.pan(this.character.x, this.character.y, 500);
+        this.scene.cameras.main.zoomTo(1.3, 500);
+
+        // Сброс обработчиков ввода
+        this.scene.input.keyboard!.off("keydown", this.handleBattleInput);
+
+        // Восстанавливаем обычный обработчик ввода
+        this.scene.time.delayedCall(100, () => {
+            this.inputSystem.resetSequence();
+            this.inputSystem.registerInputHandler();
+        });
     }
 
-    private reset() {
-        this.currentEnemy = null;
-        this.currentSequence = [];
-        this.currentIndex = 0;
-        this.isActive = false;
-    }
-
-    destroy() {
-        EventBus.off('enemy-detected');
-        EventBus.off('battle-input');
+    public cleanup() {
+        if (this.isBattleMode) {
+            this.finishBattle(false);
+        }
     }
 }
