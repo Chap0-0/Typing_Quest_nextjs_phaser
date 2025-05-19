@@ -11,6 +11,9 @@ export class InputSystem {
     private sequences: string[];
     private distancePerKey: number;
     private onCorrectInputCallback?: (distance: number) => void;
+    private isInputActive: boolean = true;
+    private inputHandler?: (event: KeyboardEvent) => void;
+
     constructor(
         scene: Scene,
         scoreManager: ScoreManager,
@@ -29,6 +32,9 @@ export class InputSystem {
         this.registerInputHandler();
     }
 
+    public setInputActive(active: boolean) {
+        this.isInputActive = active;
+    }
     private generateSequence(templates: string[], count: number): string[] {
         let result: string[] = [];
         for (let i = 0; i < count; i++) {
@@ -124,11 +130,20 @@ export class InputSystem {
     }
 
     public registerInputHandler() {
-        this.scene.input.keyboard?.on('keydown', this.handleInput.bind(this));
+        // Удаляем старый обработчик, если есть
+        if (this.inputHandler) {
+            this.scene.input.keyboard?.off('keydown', this.inputHandler);
+        }
+        
+        // Создаем новый обработчик
+        this.inputHandler = this.handleInput.bind(this);
+        this.scene.input.keyboard?.on('keydown', this.inputHandler);
     }
 
     public unregisterInputHandler() {
-        this.scene.input.keyboard?.off('keydown', this.handleInput.bind(this));
+        if (this.inputHandler) {
+            this.scene.input.keyboard?.off('keydown', this.inputHandler);
+        }
     }
 
     public setOnCorrectInputCallback(callback: (distance: number) => void) {
@@ -136,7 +151,7 @@ export class InputSystem {
     }
 
     private handleInput(event: KeyboardEvent) {
-        if (this.isProcessingInput) return;
+        if (!this.isInputActive || this.isProcessingInput) return;
         this.isProcessingInput = true;
 
         if (event.key.toLowerCase() === this.fullSequence[this.currentInputIndex]) {

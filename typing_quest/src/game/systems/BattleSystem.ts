@@ -17,6 +17,12 @@ export class BattleSystem {
     private battleSymbolContainer!: GameObjects.Container;
     private battleBackground!: GameObjects.Rectangle;
     private isProcessingInput: boolean = false;
+    private attackTimer!: Phaser.Time.TimerEvent;
+    private timeToAttack: number = 5000; // 5 секунд
+    private timeLeft: number = this.timeToAttack;
+    private timerBar!: Phaser.GameObjects.Graphics;
+    private isBattleInputActive: boolean = false;
+
     constructor(
             scene: Scene,
             character: Character,
@@ -74,6 +80,11 @@ export class BattleSystem {
 
         // Создание интерфейса боя
         this.createBattleInterface();
+        this.createTimerBar();
+        this.resetAttackTimer();
+        
+        this.isBattleInputActive = true;
+        this.inputSystem.setInputActive(false);
 
         // Переключение обработчиков ввода
         this.scene.input.keyboard?.off('keydown');
@@ -110,7 +121,7 @@ export class BattleSystem {
         this.battleSymbolContainer.removeAll(true);
 
         const symbolStyle = {
-            fontSize: "32px",
+            fontSize: "48px",
             fontFamily: "RuneScape",
             color: "#FF5555",
         };
@@ -164,24 +175,85 @@ export class BattleSystem {
             });
     }
 
-    public handleBattleInput(event: KeyboardEvent) {
-        if (this.isProcessingInput) return;
-        this.isProcessingInput = true;
 
-        if (
-            event.key.toLowerCase() ===
-            this.battleSequence[this.battleInputIndex]
-        ) {
-            // Записываем правильный ввод (кроме последнего символа)
-            if (this.battleInputIndex < this.battleSequence.length - 1) {
-                this.scoreManager.recordCorrectChar(true);
+    private createTimerBar() {
+        // Удаляем старую полосу, если есть
+        this.timerBar?.destroy();
+        
+        // Создаем красную полосу под символами ввода
+        this.timerBar = this.scene.add.graphics()
+            .setScrollFactor(0)
+            .setDepth(105);
+        
+        this.updateTimerBar();
+    }
+    
+    private updateTimerBar() {
+        const width = 400;
+        const height = 10;
+        const x = this.scene.scale.width / 2 - width / 2;
+        const y = this.scene.scale.height * 0.3 + 40;
+        
+        this.timerBar.clear();
+        this.timerBar.fillStyle(0x333333, 0.8);
+        this.timerBar.fillRect(x, y, width, height);
+        
+        const progressWidth = width * (this.timeLeft / this.timeToAttack);
+        this.timerBar.fillStyle(0xff0000, 1);
+        this.timerBar.fillRect(x, y, progressWidth, height);
+    }
+    
+    private resetAttackTimer() {
+        this.timeLeft = this.timeToAttack;
+        this.attackTimer?.destroy();
+        
+        this.attackTimer = this.scene.time.addEvent({
+            delay: 100,
+            callback: () => {
+                if (!this.isBattleInputActive) return;
+                
+                this.timeLeft -= 100;
+                this.updateTimerBar();
+                
+                if (this.timeLeft <= 0) {
+                    this.enemyAttack();
+                    this.resetAttackTimer();
+                }
+            },
+            loop: true
+        });
+    }
+    
+    private enemyAttack() {
+        if (!this.isBattleMode || !this.battleEnemy) return;
+        
+        // Враг атакует
+        this.battleEnemy.playAttackAnimation();
+        
+        // Персонаж получает урон
+        this.character.takeDamage();
+        
+    }
+
+    private handleBattleInput(event: KeyboardEvent) {
+        if (!this.isBattleInputActive || this.isProcessingInput) return;
+
+        if (event.key.toLowerCase() === this.battleSequence[this.battleInputIndex]) {
+            // Записываем правильный ввод
+            this.scoreManager.recordCorrectChar(true);
+            
+            // Персонаж атакует
+            this.character.attack();
+            
+            // Враг получает урон
+            if (this.battleEnemy) {
+                this.battleEnemy.takeHit();
             }
 
             this.battleInputIndex++;
             this.updateBattleSymbolDisplay();
 
             if (this.battleInputIndex >= this.battleSequence.length) {
-                this.character.attack();
                 this.finishBattle(true);
             }
         } else {
@@ -196,30 +268,33 @@ export class BattleSystem {
     private finishBattle(success: boolean) {
         if (success && this.battleEnemy) {
             this.battleEnemy.takeDamage();
-            this.battleEnemy.body.checkCollision.none = true;
         }
-
+        
         // Сброс состояния боя
         this.isBattleMode = false;
+        this.isBattleInputActive = false;
         this.battleEnemy = null;
+        this.attackTimer?.destroy();
 
         // Удаление интерфейса боя
-        this.battleBackground.destroy();
-        this.battleSymbolContainer.destroy();
+        this.battleBackground?.destroy();
+        this.battleSymbolContainer?.destroy();
+        this.timerBar?.destroy();
 
         // Восстановление камеры
         this.scene.cameras.main.pan(this.character.x, this.character.y, 500);
         this.scene.cameras.main.zoomTo(1.3, 500);
 
-        // Сброс обработчиков ввода
-        this.scene.input.keyboard!.off("keydown", this.handleBattleInput);
+        // Полный сброс обработчиков ввода
+        this.scene.input.keyboard?.off('keydown', this.handleBattleInput);
 
         // Восстанавливаем обычный обработчик ввода
         this.scene.time.delayedCall(100, () => {
             this.inputSystem.resetSequence();
             this.inputSystem.registerInputHandler();
+            this.inputSystem.setInputActive(true); // Явно включаем основной ввод
         });
-    }
+    }   
 
     public cleanup() {
         if (this.isBattleMode) {

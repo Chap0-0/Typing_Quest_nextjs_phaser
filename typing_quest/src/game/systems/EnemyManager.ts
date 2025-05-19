@@ -34,7 +34,7 @@ export class EnemyManager {
     }
 
     public createEnemy(x: number, y: number, type: string, config: any) {
-        const enemy = new Enemy(this.scene, x, y, type, config);
+        const enemy = new Enemy(this.scene, x, y, type, config).setDepth(2);
         this.enemies.add(enemy);
         return enemy;
     }

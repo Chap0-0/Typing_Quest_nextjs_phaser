@@ -9,6 +9,9 @@ export class Character extends Physics.Arcade.Sprite {
     private targetX = this.x;
     private numberAnim: number[]= [1,2,3];
     private battleMode: boolean = false;
+    private attackCooldown: boolean = false;
+    private lives: number = 5;
+    private isTakingDamage: boolean = false;
 
     constructor(scene: Scene, x: number, y: number, texture: string) {
         super(scene, x, y, texture);
@@ -64,6 +67,10 @@ export class Character extends Physics.Arcade.Sprite {
             frameHeight: 60,
         });
 
+        scene.load.spritesheet("die", "assets/character/DEATH.png", {
+            frameWidth: 96,
+            frameHeight: 60,
+        });
     }
 
     static createAnimations(scene: Scene) {
@@ -143,6 +150,15 @@ export class Character extends Physics.Arcade.Sprite {
                 end: 7,
             }),
             frameRate: 12,
+        });
+
+        scene.anims.create({
+            key: "die",
+            frames: scene.anims.generateFrameNumbers("die", {
+                start: 0,
+                end: 11,
+            }),
+            frameRate: 15,
         });
 
     }
@@ -234,15 +250,21 @@ export class Character extends Physics.Arcade.Sprite {
         this.play("idle", true);
     }
 
-    attack(){
+    attack() {
+        if (this.attackCooldown) return;
+        
         this.battleMode = true;
+        this.attackCooldown = true;
+        
         const number = this.numberAnim[Math.floor(Math.random() * this.numberAnim.length)];
-        console.log(number);
         this.play(`attack_${number}`, true);
+        
+        // Сброс cooldown после анимации
         this.once(`animationcomplete-attack_${number}`, () => {
             this.battleMode = false;
+            this.attackCooldown = false;
         });
-    };
+    }
 
     jump() {
         if (this.body.blocked.down || this.body.touching.down) {
@@ -252,5 +274,36 @@ export class Character extends Physics.Arcade.Sprite {
             this.play("jump_up", true);
             this.updateHitbox("jump");
         }
+    }
+
+    public takeDamage() {
+        if (this.isTakingDamage) return;
+        
+        this.isTakingDamage = true;
+        this.lives = Math.max(0, this.lives - 1);
+        
+        // Анимация получения урона
+        this.setTint(0xff0000); // Красный tint
+        this.scene.time.delayedCall(300, () => {
+            this.clearTint();
+            this.isTakingDamage = false;
+        });
+        
+        // Проверка на смерть
+        if (this.lives <= 0) {
+            this.die();
+        }
+    }
+
+    private die() {
+        // Анимация смерти и завершение уровня
+        this.play("die", true);
+        this.scene.time.delayedCall(1000, () => {
+            this.scene.scene.start("Map");
+        });
+    }
+    
+    public getLives(): number {
+        return this.lives;
     }
 }

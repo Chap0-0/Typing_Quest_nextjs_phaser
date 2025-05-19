@@ -8,7 +8,7 @@
             "bodyHeight": 34,
             "gravity": 800,
             "speed": 100,
-            "patrolDistance": 300,
+            "patrolDistance": 200,
             "animations": {
                 "walk": {
                     "texture": "Mushroom-Run.png",
@@ -22,6 +22,60 @@
                     "startFrame": 0,
                     "endFrame": 6,
                     "frameRate": 10,
+                    "repeat": -1
+                },
+                "hit": {
+                    "texture": "Mushroom-Hit.png",
+                    "startFrame": 0,
+                    "endFrame": 4,
+                    "frameRate": 8,
+                    "repeat": -1
+                },
+                "attack": {
+                    "texture": "Mushroom-Attack.png",
+                    "startFrame": 0,
+                    "endFrame": 12,
+                    "frameRate": 18,
+                    "repeat": -1
+                }
+            }
+        },
+        {
+            "type": "bat",
+            "frameWidth": 64,
+            "frameHeight": 64,
+            "bodyWidth": 32,
+            "bodyHeight": 32,
+            "gravity": 800,
+            "speed": 150,
+            "patrolDistance": 250,
+            "animations": {
+                "walk": {
+                    "texture": "Bat-Run.png",
+                    "startFrame": 0,
+                    "endFrame": 7,
+                    "frameRate": 10,
+                    "repeat": -1
+                },
+                "idle": {
+                    "texture": "Bat-IdleFly.png",
+                    "startFrame": 0,
+                    "endFrame": 8,
+                    "frameRate": 10,
+                    "repeat": -1
+                },
+                "hit": {
+                    "texture": "Bat-hurt.png",
+                    "startFrame": 0,
+                    "endFrame": 4,
+                    "frameRate": 8,
+                    "repeat": -1
+                },
+                "attack": {
+                    "texture": "Bat-Attack2.png",
+                    "startFrame": 0,
+                    "endFrame": 12,
+                    "frameRate": 18,
                     "repeat": -1
                 }
             }

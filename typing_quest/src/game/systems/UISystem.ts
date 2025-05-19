@@ -1,12 +1,13 @@
 import { Scene, GameObjects } from "phaser";
 import { ScoreManager } from "@/game/systems/ScoreManager";
+import { Character } from "../entities/Character";
 
 export class UISystem {
     private scene: Scene;
     private statsText!: GameObjects.Text;
     private completionWindow!: GameObjects.DOMElement;
     private symbolContainer!: GameObjects.Container;
-    
+    private livesText!: Phaser.GameObjects.Text;
     public pauseMenu!: GameObjects.DOMElement;
     constructor(scene: Scene) {
         this.scene = scene;
@@ -46,9 +47,23 @@ export class UISystem {
 
         // Добавляем небольшую тень для лучшей читаемости
         this.statsText.setShadow(1, 1, 'rgba(255,255,255,0.5)', 1);
+
+
+        this.livesText = this.scene.add.text(
+            this.scene.scale.width / 2,
+            this.scene.scale.height / 6,
+            "Lives: 5",
+            {
+                fontFamily: "RuneScape",
+                fontSize: "24px",
+                color: "#ff0000",
+            }
+        )
+        .setScrollFactor(0)
+        .setDepth(110);
     }
 
-    public updateStatsDisplay(scoreManager: ScoreManager) {
+    public updateStatsDisplay(scoreManager: ScoreManager, character: Character) {
         if (!this.statsText) return;
 
         this.statsText.setText(
@@ -59,6 +74,9 @@ export class UISystem {
                 `Всего: ${scoreManager.getTotalCount()}`,
             ].join("  |  ")
         );
+        if (this.livesText) {
+            this.livesText.setText(`Lives: ${character.getLives()}`);
+        }
     }
 
     // ===== Система паузы =====

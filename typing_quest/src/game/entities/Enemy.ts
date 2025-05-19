@@ -12,6 +12,7 @@ export class Enemy extends Physics.Arcade.Sprite {
     private isPatrolling: boolean = true;
     private patrolTimer: Phaser.Time.TimerEvent | null = null;
     private isInBattle: boolean = false;
+    private isTakingHit: boolean = false;
 
     constructor(
         scene: Scene,
@@ -102,6 +103,40 @@ export class Enemy extends Physics.Arcade.Sprite {
 
         this.scene.time.delayedCall(1000, () => {
             this.destroy();
+        });
+    }
+
+    public playAttackAnimation() {
+        if (!this.isAlive) return;
+        
+        if (this.config.animations?.attack) {
+            this.play(`enemy_${this.type}_attack`, true);
+        }
+        
+        // Возвращаемся к idle после атаки
+        this.scene.time.delayedCall(500, () => {
+            if (this.config.animations?.idle) {
+                this.play(`enemy_${this.type}_idle`, true);
+            }
+        });
+    }
+
+    public takeHit() {
+        if (!this.isAlive || this.isTakingHit) return;
+        
+        this.isTakingHit = true;
+        
+        // Проигрываем анимацию получения урона
+        if (this.config.animations?.hit) {
+            this.play(`enemy_${this.type}_hit`, true);
+        }
+        
+        // Возвращаемся к idle анимации после получения урона
+        this.scene.time.delayedCall(300, () => {
+            this.isTakingHit = false;
+            if (this.config.animations?.idle) {
+                this.play(`enemy_${this.type}_idle`, true);
+            }
         });
     }
 

@@ -278,7 +278,7 @@ export class Map extends Scene {
             120,
             'Выход', 
             { 
-                fontSize: '24px', 
+                fontSize: '24px RuneScape', 
                 color: '#ffffff',
                 backgroundColor: '#ff0000',
                 padding: { x: 10, y: 5 }

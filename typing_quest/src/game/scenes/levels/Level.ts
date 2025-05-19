@@ -13,13 +13,12 @@ export class Level extends Scene {
     private isAudioPlaying: boolean = true;
     private character!: Character;
     private isGamePaused: boolean = false;
-    private pauseMenu!: GameObjects.DOMElement;
     private autojumpZones: Phaser.Types.Tilemaps.TiledObject[] = [];
     private finishZone: Phaser.Types.Tilemaps.TiledObject | null = null;
     private enemyManager!: EnemyManager;
     private level_config: any;
     private scoreManager!: ScoreManager;
-    private battleDistance: number = 100;
+    private battleDistance: number = 50;
     private battleSystem: BattleSystem;
     private inputSystem!: InputSystem;
     private uiSystem!: UISystem;
@@ -77,7 +76,7 @@ export class Level extends Scene {
                 this.level_config.battleSequences
             );
         }
-        this.uiSystem.updateStatsDisplay(this.scoreManager);
+        this.uiSystem.updateStatsDisplay(this.scoreManager, this.character);
         this.checkZoneIntersections();
         this.character.updateState();
     }
@@ -94,8 +93,8 @@ export class Level extends Scene {
 
     private createLevelMap() {
         this.map = this.make.tilemap({ key: `${this.levelName}_map` });
-        const decors = this.map.addTilesetImage("2", `decors_${this.levelName}`, 0, 0, 0, 0);
-        const tileset = this.map.addTilesetImage("1", `tiles_${this.levelName}`, 0, 0, 0, 0);
+        const decors = this.map.addTilesetImage("2", `decors_${this.levelName}`, 0, 0);
+        const tileset = this.map.addTilesetImage("1", `tiles_${this.levelName}`, 0, 0);
 
         const backgroundLayer = this.map.createLayer(
             "bg",
