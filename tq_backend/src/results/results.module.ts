@@ -6,6 +6,7 @@ import { Result } from './entities/result.entity';
 import { UsersModule } from '../users/users.module';
 import { LevelsModule } from '../levels/levels.module';
 import { AuthModule } from '../auth/auth.module';
+import { AchievementsModule } from 'src/achievements/achievements.module';
 
 @Module({
   imports: [

@@ -33,7 +33,6 @@ export class AchievementsService {
     userId: number,
     achievementId: number,
   ): Promise<UserAchievement> {
-    // Проверяем, есть ли уже такое достижение у пользователя
     const existing = await this.userAchievementsRepository.findOne({
       where: { user_id: userId, achievement_id: achievementId },
     });
@@ -45,82 +44,107 @@ export class AchievementsService {
     const userAchievement = this.userAchievementsRepository.create({
       user_id: userId,
       achievement_id: achievementId,
+      unlocked_at: new Date(),
     });
 
     return this.userAchievementsRepository.save(userAchievement);
   }
 
   async checkAndUnlockAchievements(user: User): Promise<UserAchievement[]> {
-    const achievements = await this.getAllAchievements();
-    const userResults = await this.resultsService.getUserStats(user.user_id);
-    const unlockedAchievements: UserAchievement[] = [];
+      const achievements = await this.getAllAchievements();
+      const userResults = await this.resultsService.getUserStats(user.user_id);
+      const unlockedAchievements: UserAchievement[] = [];
 
-    for (const achievement of achievements) {
-      try {
-        const shouldUnlock = await this.checkAchievementCondition(
-          user,
-          achievement,
-          userResults,
-        );
+      console.log('Checking achievements for user:', user.user_id);
+      console.log('User stats:', userResults);
 
-        if (shouldUnlock) {
-          const unlocked = await this.unlockAchievement(
-            user.user_id,
-            achievement.achievement_id,
-          );
-          unlockedAchievements.push(unlocked);
-        }
-      } catch (error) {
-        this.logger.error(
-          `Error checking achievement ${achievement.achievement_id} for user ${user.user_id}`,
-          error.stack,
-        );
+      for (const achievement of achievements) {
+          try {
+              console.log(`Checking achievement ${achievement.achievement_id}: ${achievement.title}`);
+              
+              const shouldUnlock = await this.checkAchievementCondition(
+                  user,
+                  achievement,
+                  userResults,
+              );
+
+              console.log(`Should unlock: ${shouldUnlock}`);
+
+              if (shouldUnlock) {
+                  console.log(`Unlocking achievement ${achievement.achievement_id} for user ${user.user_id}`);
+                  const unlocked = await this.unlockAchievement(
+                      user.user_id,
+                      achievement.achievement_id,
+                  );
+                  unlockedAchievements.push(unlocked);
+                  console.log(`Achievement unlocked:`, unlocked);
+              }
+          } catch (error) {
+              console.error(
+                  `Error checking achievement ${achievement.achievement_id}:`,
+                  error,
+              );
+          }
       }
-    }
 
-    return unlockedAchievements;
+      console.log('Unlocked achievements:', unlockedAchievements);
+      return unlockedAchievements;
   }
 
   private async checkAchievementCondition(
-    user: User,
-    achievement: Achievement,
-    userResults: {
-      totalResults: number;
-      averageWpm: number;
-      averageAccuracy: number;
-      highestScore: number;
-    },
+      user: User,
+      achievement: Achievement,
+      userResults: {
+          totalResults: number;
+          averageCpm: number;
+          averageAccuracy: number;
+          totalScore: number;
+          totalErrors: number;
+      },
   ): Promise<boolean> {
-    // Проверяем, есть ли уже такое достижение у пользователя
-    const alreadyUnlocked = await this.userAchievementsRepository.findOne({
+      // Проверяем, есть ли уже такое достижение у пользователя
+      const alreadyUnlocked = await this.userAchievementsRepository.findOne({
+          where: {
+              user_id: user.user_id,
+              achievement_id: achievement.achievement_id,
+          },
+      });
+
+      if (alreadyUnlocked) {
+          console.log(`Achievement ${achievement.achievement_id} already unlocked`);
+          return false;
+      }
+
+      console.log(`Checking condition for achievement ${achievement.achievement_id}`);
+      console.log(`Type: ${achievement.conditionType}, Value: ${achievement.conditionValue}`);
+      console.log(`User stats:`, userResults);
+
+      switch (achievement.conditionType) {
+          case 'level_completed':
+              console.log(`Levels completed: ${userResults.totalResults} >= ${achievement.conditionValue}?`,
+                  userResults.totalResults >= achievement.conditionValue);
+              return userResults.totalResults >= achievement.conditionValue;
+          case 'cpm':
+              console.log(`cpm: ${userResults.averageCpm} >= ${achievement.conditionValue}?`,
+                  userResults.averageCpm >= achievement.conditionValue);
+              return userResults.averageCpm >= achievement.conditionValue;
+          case 'accuracy':
+              console.log(`Accuracy: ${userResults.averageAccuracy} >= ${achievement.conditionValue}?`,
+                  userResults.averageAccuracy >= achievement.conditionValue);
+              return userResults.averageAccuracy >= achievement.conditionValue;
+          default:
+              console.log(`Unknown condition type: ${achievement.conditionType}`);
+              return false;
+      }
+  }
+
+  async isAchievementUnlocked(userId: number, achievementId: number): Promise<boolean> {
+    const achievement = await this.userAchievementsRepository.findOne({
       where: {
-        user_id: user.user_id,
-        achievement_id: achievement.achievement_id,
+        user_id: userId,
+        achievement_id: achievementId,
       },
     });
-
-    if (alreadyUnlocked) {
-      return false;
-    }
-
-    // Проверяем условия в зависимости от типа достижения
-    switch (achievement.conditionType) {
-      case 'wpm':
-        return userResults.highestScore >= achievement.conditionValue;
-      case 'accuracy':
-        return userResults.averageAccuracy >= achievement.conditionValue;
-      case 'levels_completed':
-        return userResults.totalResults >= achievement.conditionValue;
-      case 'total_score':
-        // Для этого типа нужно дополнительное вычисление
-        const totalScore = await this.resultsService
-          .getUserResults(user.user_id)
-          .then((results) =>
-            results.reduce((sum, result) => sum + result.score, 0),
-          );
-        return totalScore >= achievement.conditionValue;
-      default:
-        return false;
-    }
+    return !!achievement;
   }
 }

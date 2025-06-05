@@ -10,21 +10,44 @@ export class ScoreManager {
     private typingSpeedHistory: { time: number; speed: number }[] = [];
     private lastKeyTime: number;
     private lastRecordedTime: number = 0;
+    private speedSamples: {time: number, cpm: number}[] = [];
+    private lastSampleTime: number = 0;
+    private correctCharsInSample: number = 0;
+    private sampleInterval: number = 2000; // Интервал сбора данных в мс
+    private sampleStartTime: number = 0; // Добавляем время начала сэмпла
 
     constructor(private scene: Scene) {
         this.startTime = Date.now();
         this.lastKeyTime = this.startTime;
+        this.sampleStartTime = this.startTime; // Инициализируем время начала сэмпла
     }
 
-    public recordCorrectChar(isBattle: boolean = false) {
+public recordCorrectChar(isBattle: boolean = false) {
         const now = Date.now();
-        // Игнорируем слишком быстрые повторные нажатия
         if (now - this.lastRecordedTime < 50) return;
 
         this.lastRecordedTime = now;
         this.correctChars++;
         this.totalChars++;
-        this.recordTypingSpeed();
+        this.correctCharsInSample++;
+        
+        // Записываем данные каждые sampleInterval миллисекунд
+        if (now - this.lastSampleTime >= this.sampleInterval) {
+            const timeElapsed = (now - this.sampleStartTime) / 1000; // Время сэмпла в секундах
+            const minutesElapsed = timeElapsed / 60;
+            
+            const cpm = this.correctCharsInSample / Math.max(minutesElapsed, 0.0167);
+            
+            this.speedSamples.push({
+                time: (now - this.startTime) / 1000, // Общее время с начала уровня
+                cpm: cpm
+            });
+            
+            // Сбрасываем счётчики для нового сэмпла
+            this.correctCharsInSample = 0;
+            this.lastSampleTime = now;
+            this.sampleStartTime = now; // Обновляем время начала нового сэмпла
+        }
     }
 
     public recordIncorrectChar(isBattle: boolean = false) {
@@ -71,12 +94,19 @@ export class ScoreManager {
     }
 
     public getAverageSpeed(): number {
-        if (this.typingSpeedHistory.length === 0) return 0;
-        const sum = this.typingSpeedHistory.reduce(
-            (acc, curr) => acc + curr.speed,
-            0
-        );
-        return sum / this.typingSpeedHistory.length;
+        if (this.speedSamples.length === 0) return 0;
+        
+        // Рассчитываем среднее cpm из всех сэмплов
+        const sum = this.speedSamples.reduce((acc, curr) => acc + curr.cpm, 0);
+        return sum / this.speedSamples.length;
+    }
+
+    public getSpeedHistory(): Array<{time: number, speed: number}> {
+        // Возвращаем реальные данные вместо заглушки
+        return this.speedSamples.map(sample => ({
+            time: sample.time,
+            speed: sample.cpm
+        }));
     }
 
     public getTimeTaken(): number {
@@ -91,22 +121,17 @@ export class ScoreManager {
     public calculateScore(): number {
         const timeTaken = this.getTimeTaken();
         const accuracy = this.getAccuracy() / 100;
-        const speed = this.getAverageSpeed();
+        const cpm = this.getAverageSpeed();
+        const errorsCount = this.getIncorrectCount();
+        
+        // Та же формула, что и на сервере
+        const accuracyMultiplier = accuracy;
+        const timeMultiplier = 1 + (1 - timeTaken / 180);
+        const errorsPenalty = errorsCount * 5;
 
-        // Базовые очки за правильные символы
-        let score = this.correctChars * 10;
-
-        // Бонус за скорость (чем быстрее, тем больше бонус)
-        score += speed * 50;
-
-        // Бонус за точность
-        score *= accuracy;
-
-        // Бонус за время (чем быстрее прошел уровень, тем больше бонус)
-        const timeBonus = Math.max(0, 300 - timeTaken) * 5; // 300 секунд (5 минут) - максимальное время для бонуса
-        score += timeBonus;
-
-        return Math.floor(score);
+        const score = cpm * accuracyMultiplier * timeMultiplier - errorsPenalty;
+        
+        return Math.max(0, Math.round(score));
     }
 
     public getTypingSpeedHistory() {

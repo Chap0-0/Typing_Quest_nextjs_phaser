@@ -1,4 +1,4 @@
-import { IsNumber, IsPositive, Min, Max } from 'class-validator';
+import { IsNumber, IsPositive } from 'class-validator';
 
 export class SaveResultDto {
   @IsNumber()
@@ -6,19 +6,19 @@ export class SaveResultDto {
   levelId: number;
 
   @IsNumber()
-  @IsPositive()
-  wpm: number;
+  cpm: number;
 
   @IsNumber()
-  @Min(0)
-  @Max(100)
   accuracy: number;
 
   @IsNumber()
-  @IsPositive()
-  completionTime: number; // in seconds
+  completionTime: number;
 
   @IsNumber()
-  @Min(0)
+  @IsPositive()
   errorsCount: number;
+  
+  @IsNumber()
+  @IsPositive()
+  score: number;
 }

@@ -1,14 +1,20 @@
+import React from "react";
 import { Scene, GameObjects } from "phaser";
 import { ScoreManager } from "@/game/systems/ScoreManager";
 import { Character } from "../entities/Character";
+import { createRoot } from 'react-dom/client';
+import PauseModal from './../../components/PauseModal';
+import ResultsModal from './../../components/ResultsModal';
 
 export class UISystem {
     private scene: Scene;
     private statsText!: GameObjects.Text;
-    private completionWindow!: GameObjects.DOMElement;
     private symbolContainer!: GameObjects.Container;
     private livesText!: Phaser.GameObjects.Text;
-    public pauseMenu!: GameObjects.DOMElement;
+    private pauseModalContainer!: HTMLDivElement;
+    private resultsModalContainer!: HTMLDivElement;
+    private pauseModalRoot: any = null;
+    private resultsModalRoot: any = null;
     constructor(scene: Scene) {
         this.scene = scene;
     }
@@ -19,51 +25,47 @@ export class UISystem {
         const interfaceY = this.scene.scale.height - interfaceHeight;
 
         // Фон статистики (используем такое же изображение как для ввода)
-        const bg = this.scene.add.image(
-            this.scene.scale.width / 2,
-            interfaceY - 60,
-            "stats"
-        )
-        .setDisplaySize(460, 60)
-        .setScrollFactor(0)
-        .setDepth(105);
+        const bg = this.scene.add
+            .image(this.scene.scale.width / 2, interfaceY - 60, "stats")
+            .setDisplaySize(460, 60)
+            .setScrollFactor(0)
+            .setDepth(105);
 
         // Текст статистики (черные буквы)
-        this.statsText = this.scene.add.text(
-            this.scene.scale.width / 2, 
-            interfaceY - 70, 
-            "", 
-            {
+        this.statsText = this.scene.add
+            .text(this.scene.scale.width / 2, interfaceY - 70, "", {
                 fontFamily: "RuneScape",
                 fontSize: "20px",
                 color: "#000000", // Черный цвет текста
                 padding: { x: 10, y: 5 },
                 align: "center",
-            }
-        )
-        .setOrigin(0.5, 0)
-        .setScrollFactor(0)
-        .setDepth(106);
+            })
+            .setOrigin(0.5, 0)
+            .setScrollFactor(0)
+            .setDepth(106);
 
         // Добавляем небольшую тень для лучшей читаемости
-        this.statsText.setShadow(1, 1, 'rgba(255,255,255,0.5)', 1);
+        this.statsText.setShadow(1, 1, "rgba(255,255,255,0.5)", 1);
 
-
-        this.livesText = this.scene.add.text(
-            this.scene.scale.width / 2,
-            this.scene.scale.height - 300,
-            "Lives: 5",
-            {
-                fontFamily: "RuneScape",
-                fontSize: "24px",
-                color: "#000000",
-            }
-        )
-        .setScrollFactor(0)
-        .setDepth(110);
+        this.livesText = this.scene.add
+            .text(
+                this.scene.scale.width / 2,
+                this.scene.scale.height - 300,
+                "Lives: 5",
+                {
+                    fontFamily: "RuneScape",
+                    fontSize: "24px",
+                    color: "#000000",
+                }
+            )
+            .setScrollFactor(0)
+            .setDepth(110);
     }
 
-    public updateStatsDisplay(scoreManager: ScoreManager, character: Character) {
+    public updateStatsDisplay(
+        scoreManager: ScoreManager,
+        character: Character
+    ) {
         if (!this.statsText) return;
 
         this.statsText.setText(
@@ -77,47 +79,6 @@ export class UISystem {
         if (this.livesText) {
             this.livesText.setText(`Lives: ${character.getLives()}`);
         }
-    }
-
-    // ===== Система паузы =====
-    public createPauseSystem(
-        togglePause: () => void, 
-        toggleAudio: () => void,
-        returnToMap: () => void
-    ) {
-        const pauseButton = this.scene.add
-            .image(window.innerWidth / 7, 140, "pause_button")
-            .setInteractive({ useHandCursor: true })
-            .setScrollFactor(0)
-            .setDepth(10000)
-            .setScale(5)
-            .on("pointerdown", togglePause);
-
-        this.pauseMenu = this.scene.add
-            .dom(this.scene.scale.width / 2, this.scene.scale.height / 2)
-            .createFromHTML(`
-                <div style="background: rgba(0,0,0,0.8); border-radius:10px; padding:20px; text-align:center; width:300px;">
-                    <button id="toggleSound" style="background:none; border:none; color:white; font-size:24px; cursor:pointer; margin-bottom:20px;">🔊</button>
-                    <button id="resumeGame" style="background:#4CAF50; color:white; border:none; padding:10px 20px; margin:10px; cursor:pointer; width:80%;">Продолжить</button>
-                    <button id="returnToMap" style="background:#f44336; color:white; border:none; padding:10px 20px; margin:10px; cursor:pointer; width:80%;">Вернуться на карту</button>
-                </div>
-            `)
-            .setOrigin(0.5)
-            .setScrollFactor(0)
-            .setDepth(20000)
-            .setVisible(false);
-
-        const toggleSoundBtn = this.pauseMenu.getChildByID("toggleSound");
-        const resumeBtn = this.pauseMenu.getChildByID("resumeGame");
-        const returnBtn = this.pauseMenu.getChildByID("returnToMap");
-
-        toggleSoundBtn?.addEventListener("click", toggleAudio);
-        resumeBtn?.addEventListener("click", togglePause);
-        returnBtn?.addEventListener("click", returnToMap);
-    }
-
-    public setPauseMenuVisible(visible: boolean) {
-        this.pauseMenu?.setVisible(visible);
     }
 
     // ===== Интерфейс ввода =====
@@ -136,7 +97,10 @@ export class UISystem {
             .setScrollFactor(0);
 
         this.symbolContainer = this.scene.add
-            .container(this.scene.scale.width / 2, interfaceY + interfaceHeight / 2)
+            .container(
+                this.scene.scale.width / 2,
+                interfaceY + interfaceHeight / 2
+            )
             .setDepth(102)
             .setScrollFactor(0);
     }
@@ -163,16 +127,14 @@ export class UISystem {
 
         // Прошлые символы
         const pastStart = Math.max(0, currentInputIndex - 9);
-        fullSequence
-            .slice(pastStart, currentInputIndex)
-            .forEach((symbol) => {
-                this.symbolContainer.add(
-                    this.scene.add
-                        .text(xPosition, 0, symbol, pastStyle)
-                        .setOrigin(0.5)
-                );
-                xPosition += symbolSpacing;
-            });
+        fullSequence.slice(pastStart, currentInputIndex).forEach((symbol) => {
+            this.symbolContainer.add(
+                this.scene.add
+                    .text(xPosition, 0, symbol, pastStyle)
+                    .setOrigin(0.5)
+            );
+            xPosition += symbolSpacing;
+        });
 
         // Текущий символ
         if (currentInputIndex < fullSequence.length) {
@@ -193,7 +155,9 @@ export class UISystem {
         fullSequence
             .slice(
                 currentInputIndex + 1,
-                currentInputIndex + 1 + (19 - (currentInputIndex - pastStart + 1))
+                currentInputIndex +
+                    1 +
+                    (19 - (currentInputIndex - pastStart + 1))
             )
             .forEach((symbol) => {
                 this.symbolContainer.add(
@@ -207,93 +171,103 @@ export class UISystem {
         this.symbolContainer.x = this.scene.scale.width / 2 - symbolSpacing * 9;
     }
 
-    // ===== Окно результатов =====
-    public showResultsWindow(stats: any, onComplete: () => void) {
-        this.completionWindow = this.scene.add
-            .dom(this.scene.scale.width / 2, this.scene.scale.height / 2)
-            .createFromHTML(`
-                <div style="background:rgba(0,0,0,0.9); border:2px solid #4CAF50; border-radius:10px; color:white; padding:20px; text-align:center; width:500px;">
-                    <h2>Уровень пройден!</h2>
-                    <div style="display: flex; justify-content: space-between; margin: 20px 0;">
-                        <div style="text-align: left;">
-                            <p>Время: ${stats.time}</p>
-                            <p>Точность: ${stats.accuracy}%</p>
-                            <p>Скорость: ${stats.speed} сим/сек</p>
-                            <p style="font-size: 24px; font-weight: bold; margin-top: 10px;">Очки: ${stats.score}</p>
-                        </div>
-                        <div>
-                            <img src="${stats.chart}" style="width: 200px; height: 100px; background: white;" />
-                            <p style="font-size: 12px; margin-top: 5px;">График скорости печати</p>
-                        </div>
-                    </div>
-                    <button id="nextLevelBtn" style="background:#4CAF50; color:white; border:none; padding:10px 20px; margin-top:15px; cursor:pointer; border-radius:5px;">На карту</button>
-                </div>
-            `)
-            .setOrigin(0.5)
+    private createModalContainers() {
+        // Удаляем старые контейнеры, если есть
+        const oldPause = document.getElementById('pause-modal-container');
+        const oldResults = document.getElementById('results-modal-container');
+        if (oldPause) oldPause.remove();
+        if (oldResults) oldResults.remove();
+
+        // Создаем новые контейнеры
+        this.pauseModalContainer = document.createElement('div');
+        this.pauseModalContainer.id = 'pause-modal-container';
+        this.pauseModalContainer.style.display = 'none'; // Скрываем по умолчанию
+
+        this.resultsModalContainer = document.createElement('div');
+        this.resultsModalContainer.id = 'results-modal-container';
+        this.resultsModalContainer.style.display = 'none'; // Скрываем по умолчанию
+
+        // Добавляем в DOM
+        document.getElementById('game-container')?.appendChild(this.pauseModalContainer);
+        document.getElementById('game-container')?.appendChild(this.resultsModalContainer);
+    }
+
+    public createPauseSystem(togglePause: () => void, toggleAudio: () => void, returnToMap: () => void) {
+        this.createModalContainers(); // Контейнеры создаются со стилем display: none
+        
+        const pauseButton = this.scene.add
+            .image(window.innerWidth / 7, 140, "pause_button")
+            .setInteractive({ useHandCursor: true })
+            .setScrollFactor(0)
             .setDepth(10000)
-            .setScrollFactor(0);
+            .setScale(5)
+            .on("pointerdown", () => {
+                togglePause(); // Вызовет setPauseMenuVisible с нужным значением
+            });
 
-        this.completionWindow
-            .getChildByID("nextLevelBtn")
-            ?.addEventListener("click", onComplete);
+        if (!this.pauseModalRoot) {
+            this.pauseModalRoot = createRoot(this.pauseModalContainer);
+        }
+
+        this.pauseModalRoot.render(
+            React.createElement(PauseModal, {
+                onResume: togglePause,
+                onToggleAudio: toggleAudio,
+                onReturnToMap: () => {
+                    this.scene.sound.stopAll();
+                    this.cleanup();
+                    returnToMap();
+                }
+            })
+        );
     }
 
-    public createSpeedChart(history: any[]): HTMLCanvasElement {
-        const canvas = document.createElement("canvas");
-        canvas.width = 400;
-        canvas.height = 200;
-        const ctx = canvas.getContext("2d")!;
-
-        if (history.length === 0) return canvas;
-
-        // Настройки графика
-        const padding = 20;
-        const graphWidth = canvas.width - 2 * padding;
-        const graphHeight = canvas.height - 2 * padding;
-
-        // Находим максимальные значения
-        const maxTime = Math.max(...history.map((h) => h.time));
-        const maxSpeed = Math.max(...history.map((h) => h.speed), 1);
-
-        // Рисуем оси
-        ctx.strokeStyle = "#FFFFFF";
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(padding, padding);
-        ctx.lineTo(padding, canvas.height - padding);
-        ctx.lineTo(canvas.width - padding, canvas.height - padding);
-        ctx.stroke();
-
-        // Подписи осей
-        ctx.fillStyle = "#FFFFFF";
-        ctx.font = "10px RuneScape";
-        ctx.fillText("Скорость (симв/сек)", padding + 5, padding + 10);
-        ctx.fillText("Время (сек)", canvas.width - 40, canvas.height - 5);
-
-        // Рисуем график
-        ctx.strokeStyle = "#4CAF50";
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-
-        history.forEach((point, i) => {
-            const x = padding + (point.time / maxTime) * graphWidth;
-            const y = canvas.height - padding - (point.speed / maxSpeed) * graphHeight;
-
-            if (i === 0) {
-                ctx.moveTo(x, y);
-            } else {
-                ctx.lineTo(x, y);
+    public async showResultsWindow(stats: any, onComplete: () => void) {
+        let leaderboard = [];
+        try {
+            const response = await fetch(`http://localhost:3000/results/level/${stats.levelId}?limit=5`);
+            if (response.ok) {
+                leaderboard = await response.json();
             }
-        });
+        } catch (error) {
+            console.error('Error fetching leaderboard:', error);
+        }
 
-        ctx.stroke();
+        if (!this.resultsModalRoot) {
+            this.resultsModalRoot = createRoot(this.resultsModalContainer);
+        }
 
-        return canvas;
+        // Показываем контейнер перед рендерингом
+        this.resultsModalContainer.style.display = 'block';
+
+        this.resultsModalRoot.render(
+            React.createElement(ResultsModal, {
+                stats,
+                leaderboard,
+                onComplete
+            })
+        );
     }
 
+    public setPauseMenuVisible(visible: boolean) {
+        this.pauseModalContainer.style.display = visible ? 'block' : 'none';
+    }
+
+    // Обновим метод cleanup:
     public cleanup() {
-        this.pauseMenu?.destroy();
-        this.completionWindow?.destroy();
+        if (this.pauseModalRoot) {
+            this.pauseModalRoot.unmount();
+        }
+        if (this.resultsModalRoot) {
+            this.resultsModalRoot.unmount();
+        }
+        const pauseContainer = document.getElementById('pause-modal-container');
+        const resultsContainer = document.getElementById('results-modal-container');
+        if (pauseContainer) pauseContainer.remove();
+        if (resultsContainer) resultsContainer.remove();
+        
         this.symbolContainer?.destroy();
+        this.statsText?.destroy();
+        this.livesText?.destroy();
     }
 }

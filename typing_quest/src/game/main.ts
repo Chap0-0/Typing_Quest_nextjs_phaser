@@ -3,13 +3,13 @@ import { Intro } from './scenes/Intro';
 import { Map } from './scenes/Map';
 import { AUTO, Game } from 'phaser';
 import { Preloader } from './scenes/Preloader';
-import { Level } from './scenes/levels/Level';
+import { Level } from './scenes/Level';
 import { LevelPreloader } from './scenes/LevelPreloader';
 
 //  Find out more information about the Game Config at:
 //  https://newdocs.phaser.io/docs/3.70.0/Phaser.Types.Core.GameConfig
 const config: Phaser.Types.Core.GameConfig = {
-    type: Phaser.WEBGL,
+    type: Phaser.AUTO,
     width: window.innerWidth,
     height: window.innerHeight,
     parent: 'game-container',

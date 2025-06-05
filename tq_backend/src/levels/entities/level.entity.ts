@@ -36,6 +36,6 @@ export class Level {
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   created_at: Date;
 
-  @OneToMany(() => Result, (result) => result.level)
+  @OneToMany(() => Result, (result) => result.level) // Исправлено на result.level
   results: Result[];
 }

@@ -22,6 +22,8 @@ export class BattleSystem {
     private timeLeft: number = this.timeToAttack;
     private timerBar!: Phaser.GameObjects.Graphics;
     private isBattleInputActive: boolean = false;
+    private battleStartText!: Phaser.GameObjects.Text;
+    private battleStartTimer!: Phaser.Time.TimerEvent;
 
     constructor(
             scene: Scene,
@@ -69,6 +71,56 @@ export class BattleSystem {
         this.character.stopMoving();
         enemy.stopForBattle(this.character.x);
         this.character.setFlipX(enemy.x < this.character.x);
+
+        this.createBattleStartText();
+
+        // Запускаем таймер перед началом боя
+        this.battleStartTimer = this.scene.time.addEvent({
+            delay: 1000, // 1 секунда
+            callback: () => {
+                this.beginActualBattle(battleSequences);
+            },
+            callbackScope: this
+        });
+    }
+
+    private createBattleStartText() {
+        this.battleStartText = this.scene.add.text(
+            this.scene.scale.width / 2,
+            this.scene.scale.height / 2,
+            'БОЙ НАЧИНАЕТСЯ!',
+            {
+                fontFamily: 'RuneScape',
+                fontSize: '72px',
+                color: '#FF0000',
+                stroke: '#FFFFFF',
+                strokeThickness: 5,
+                shadow: {
+                    offsetX: 2,
+                    offsetY: 2,
+                    color: '#000000',
+                    blur: 2,
+                    stroke: true
+                }
+            }
+        )
+        .setOrigin(0.5)
+        .setDepth(200)
+        .setScrollFactor(0);
+
+        // Анимация мигания
+        this.scene.tweens.add({
+            targets: this.battleStartText,
+            alpha: 0.3,
+            duration: 500,
+            yoyo: true,
+            repeat: -1
+        });
+    }
+
+    private beginActualBattle(battleSequences: string[]) {
+        // Удаляем текст предупреждения
+        this.battleStartText?.destroy();
 
         // Выбираем случайную последовательность для боя
         const randomSequence = Phaser.Utils.Array.GetRandom(battleSequences);
@@ -281,6 +333,8 @@ export class BattleSystem {
         this.battleBackground?.destroy();
         this.battleSymbolContainer?.destroy();
         this.timerBar?.destroy();
+        this.battleStartTimer?.destroy();
+        this.battleStartText?.destroy();
 
         // Восстановление камеры
         this.scene.cameras.main.pan(this.character.x, this.character.y, 500);

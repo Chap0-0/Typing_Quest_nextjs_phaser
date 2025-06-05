@@ -26,7 +26,7 @@ export class User {
   @OneToMany(() => UserSession, (session) => session.user)
   sessions: UserSession[];
 
-  @OneToMany(() => Result, (result) => result.user)
+  @OneToMany(() => Result, (result) => result.user) // Исправлено на result.user
   results: Result[];
 
   @OneToMany(() => UserAchievement, (userAchievement) => userAchievement.user)

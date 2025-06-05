@@ -28,11 +28,28 @@ export class AchievementsController {
     return this.achievementsService.getUserAchievements(userId);
   }
 
+  @Get('user/:achievementId/status')
+  @UseGuards(AccessTokenGuard)
+  async getAchievementStatus(
+    @Req() req: Request,
+    @Param('achievementId') achievementId: string,
+  ) {
+    const userId = req.user['sub'];
+    return {
+      unlocked: await this.achievementsService.isAchievementUnlocked(
+        userId,
+        +achievementId,
+      ),
+    };
+  }
+
   @Post('check')
   @UseGuards(AccessTokenGuard)
   async checkAchievements(@Req() req: Request) {
-    const user = req.user as User;
-    return this.achievementsService.checkAndUnlockAchievements(user);
+      console.log('User from request:', req.user);
+      const userId = req.user['sub']; // Используем sub вместо user.user_id
+      const user = { user_id: userId } as User; // Создаем объект пользователя с правильным полем
+      return this.achievementsService.checkAndUnlockAchievements(user);
   }
 
   @Post(':id/unlock')

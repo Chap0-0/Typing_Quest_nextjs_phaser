@@ -42,4 +42,15 @@ export class EnemyManager {
     public getEnemies() {
         return this.enemies;
     }
+
+    public cleanup() {
+        if (this.enemies instanceof Phaser.GameObjects.Group) {
+            this.enemies.clear(true, true); // Уничтожаем все объекты в группе
+        } else if (Array.isArray(this.enemies)) {
+            this.enemies.forEach(enemy => enemy.destroy());
+            this.enemies = [];
+        } else {
+            this.enemies = []; // Просто сбрасываем
+        }
+    }
 }

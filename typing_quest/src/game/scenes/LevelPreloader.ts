@@ -2,15 +2,16 @@ import { Scene } from "phaser";
 import { Character } from "../entities/Character";
 
 export class LevelPreloader extends Scene {
-    private targetLevel: string;
-    private enemyConfig: any;
-
+    private data: any;
+    private accessToken: string;
     constructor() {
         super("LevelPreloader");
     }
 
-    init(data: { targetLevel: string }) {
-        this.targetLevel = data.targetLevel;
+    init(data: { levelConfig: any, accessToken: string }) {
+        this.data = data.levelConfig;
+        console.log(this.data);
+        this.accessToken = data.accessToken;
         this.createProgressBar();
     }
 
@@ -36,22 +37,19 @@ export class LevelPreloader extends Scene {
     }
 
     preload() {
-        // Сначала загружаем конфиг врагов
-        this.load.json('enemy-config', `assets/levels/${this.targetLevel}/enemy-config.json`);
         
         // Затем остальные ресурсы
-        this.loadResourcesForLevel(this.targetLevel);
+        this.loadResourcesForLevel(this.data.levelId);
         Character.preload(this);
     }
 
     create() {
-        this.enemyConfig = this.cache.json.get('enemy-config');
         this.loadEnemyResources();
         
         this.load.once('complete', () => {
             this.createEnemyAnimations();
             Character.createAnimations(this);
-            this.scene.start('Level', { levelName: this.targetLevel });
+            this.scene.start('Level', { levelConfig: this.data, accessToken: this.accessToken});
         });
         this.load.start();
     }
@@ -59,7 +57,7 @@ export class LevelPreloader extends Scene {
     private loadEnemyResources() {
         this.load.setPath('assets/enemies/');
         
-        this.enemyConfig.enemyTypes.forEach((enemyType: any) => {
+        this.data.enemyTypes.forEach((enemyType: any) => {
             // Загружаем отдельные файлы для каждой анимации
             if (enemyType.animations) {
                 Object.entries(enemyType.animations).forEach(([animName, animData]: [string, any]) => {
@@ -88,7 +86,7 @@ export class LevelPreloader extends Scene {
     }
 
     private createEnemyAnimations() {
-        this.enemyConfig.enemyTypes.forEach((enemyType: any) => {
+        this.data.enemyTypes.forEach((enemyType: any) => {
             if (enemyType.animations) {
                 Object.entries(enemyType.animations).forEach(([animName, animData]: [string, any]) => {
                     this.anims.create({
@@ -108,18 +106,20 @@ export class LevelPreloader extends Scene {
             }
         });
     }
+    
     private loadResourcesForLevel(levelName: string) {
         const levelPath = `assets/levels/${levelName}`;
         this.load.setPath(levelPath);
         this.load.tilemapTiledJSON(`${levelName}_map`, `${levelName}.tmj`);
         this.load.image(`tiles_${levelName}`, `tiles_${levelName}.png`);
         this.load.image(`decors_${levelName}`, `decors_${levelName}.png`);
-        this.load.json(`${levelName}`, `${levelName}.json`);
         this.load.image(`${levelName}_bg`, `${levelName}_bg.png`);
         this.load.audio("backgroundMusic", `${levelName}.mp3`);
         this.load.setPath(""); 
         this.load.image('input_bg', 'assets/ui/scroll.png');
         this.load.image('stats', 'assets/ui/input-auth.png')
         this.load.image('pause_button', 'assets/ui/pause_button.png');
+        this.load.image('heart_full', 'assets/character/heart_full.png');
+        this.load.image('heart_empty', 'assets/character/heart_empty.png');
     }
 }
