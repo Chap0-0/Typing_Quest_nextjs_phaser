@@ -13,13 +13,13 @@ export class Achievement {
   description: string;
 
   @Column({ type: 'text', name: 'condition_text' })
-  conditionText: string; // например "Reach 100 WPM"
+  conditionText: string; 
 
   @Column({ length: 50, name: 'condition_type' })
-  conditionType: string; // например: wpm, level_completed
+  conditionType: string; 
 
   @Column({ type: 'integer', name: 'condition_value' })
-  conditionValue: number; // например: 100 для WPM
+  conditionValue: number;
 
   @Column({ length: 255, name: 'icon_path', nullable: true })
   iconPath: string;

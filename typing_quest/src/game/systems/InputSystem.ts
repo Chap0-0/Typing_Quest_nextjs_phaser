@@ -37,17 +37,15 @@ export class InputSystem {
     }
      private generateSequence(templates: string[], count: number): string[] {
         let result: string[] = [];
-        const availableChars = templates[0]; // Получаем строку символов (например "фывапролджэ")
+        const availableChars = templates[0];
         
         for (let i = 0; i < count; i++) {
-            // Генерируем 4 случайных символа
             let group = [];
             for (let j = 0; j < 4; j++) {
                 const randomChar = availableChars[Math.floor(Math.random() * availableChars.length)];
                 group.push(randomChar);
             }
             
-            // Добавляем пробел (который будет отображаться как "_")
             group.push("_");
             
             result.push(...group);
@@ -96,7 +94,6 @@ export class InputSystem {
         const symbolSpacing = 36;
         let xPosition = 0;
 
-        // Прошлые символы
         const pastStart = Math.max(0, this.currentInputIndex - 9);
         this.fullSequence
             .slice(pastStart, this.currentInputIndex)
@@ -109,7 +106,6 @@ export class InputSystem {
                 xPosition += symbolSpacing;
             });
 
-        // Текущий символ
         if (this.currentInputIndex < this.fullSequence.length) {
             this.symbolContainer.add(
                 this.scene.add
@@ -124,7 +120,6 @@ export class InputSystem {
             xPosition += symbolSpacing;
         }
 
-        // Будущие символы
         this.fullSequence
             .slice(
                 this.currentInputIndex + 1,
@@ -142,12 +137,10 @@ export class InputSystem {
     }
 
     public registerInputHandler() {
-        // Удаляем старый обработчик, если есть
         if (this.inputHandler) {
             this.scene.input.keyboard?.off('keydown', this.inputHandler);
         }
         
-        // Создаем новый обработчик
         this.inputHandler = this.handleInput.bind(this);
         this.scene.input.keyboard?.on('keydown', this.inputHandler);
     }
@@ -166,10 +159,8 @@ export class InputSystem {
         if (!this.isInputActive || this.isProcessingInput) return;
         this.isProcessingInput = true;
 
-        // Получаем ожидаемый символ
         let expectedChar = this.fullSequence[this.currentInputIndex];
         
-        // Если ожидается пробел (отображается как "_"), то проверяем нажатие пробела
         if (expectedChar === '_') {
             if (event.code === 'Space') {
                 this.scoreManager.recordCorrectChar(false);
@@ -182,7 +173,6 @@ export class InputSystem {
                 this.scoreManager.recordIncorrectChar(false);
             }
         } 
-        // Для обычных символов
         else if (event.key.toLowerCase() === expectedChar.toLowerCase()) {
             this.scoreManager.recordCorrectChar(false);
             const distance = this.processCorrectInput();
@@ -202,7 +192,6 @@ export class InputSystem {
     private processCorrectInput() {
         this.currentInputIndex++;
         this.updateSymbolDisplay();
-        // Возвращаем дистанцию для движения персонажа
         return this.distancePerKey;
     }
 

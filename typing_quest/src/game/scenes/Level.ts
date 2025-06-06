@@ -184,7 +184,6 @@ export class Level extends Scene {
         this.uiSystem.setPauseMenuVisible(this.isGamePaused);
     }
 
-    // ===== Аудио система =====
     private createAudio() {
         this.backgroundMusic = this.sound.add("backgroundMusic", {
             loop: true,
@@ -209,7 +208,6 @@ export class Level extends Scene {
             player.body.height
         );
 
-        // Автопрыжки
         if (player.body.blocked.down || player.body.touching.down) {
             for (const zone of this.autojumpZones) {
                 const zoneRect = new Phaser.Geom.Rectangle(
@@ -245,9 +243,6 @@ export class Level extends Scene {
                 )
             ) {
                 this.showLevelComplete();
-            // Убрать после
-            } else if (this.character.x > 2000) {
-                this.showLevelComplete();
             }
         }
     }
@@ -277,10 +272,9 @@ export class Level extends Scene {
         this.children.removeAll();
 
         // Удаляем все слушатели событий
-        EventBus.off("event-name"); // если у вас есть кастомные события
+        EventBus.off("event-name");
     }
 
-    // Добавляем метод shutdown (вызывается при остановке сцены)
     shutdown() {
         this.cleanupScene();
     }
@@ -317,7 +311,6 @@ export class Level extends Scene {
             console.error("Failed to check achievements:", error);
         } else {
             const result = await response.json();
-            console.log("Achievements check result:", result);
         }
     } catch (error) {
         console.error("Error checking achievements:", error);
@@ -344,11 +337,9 @@ export class Level extends Scene {
                     accuracy: parseFloat(stats.accuracy),
                     completionTime: timeTaken,
                     errorsCount: stats.errors,
-                    // Добавляем точное время для расчёта
                     timeTaken: timeTaken
                 }),
             });
-            // ... обработка ответа
         } catch (error) {
             console.error('Error saving result:', error);
         }

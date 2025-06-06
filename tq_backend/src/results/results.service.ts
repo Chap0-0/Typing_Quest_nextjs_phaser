@@ -22,8 +22,8 @@ export class ResultsService {
     const score = this.calculateScore(cpm, accuracy, errorsCount, completionTime);
 
     const result = this.resultsRepository.create({
-      user: { user_id: userId }, // Передаем объект User с id
-      level: { level_id: levelId }, // Передаем объект Level с id
+      user: { user_id: userId },
+      level: { level_id: levelId },
       cpm,
       accuracy,
       completion_time: completionTime,

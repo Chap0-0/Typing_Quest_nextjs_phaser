@@ -55,29 +55,20 @@ export class AchievementsService {
       const userResults = await this.resultsService.getUserStats(user.user_id);
       const unlockedAchievements: UserAchievement[] = [];
 
-      console.log('Checking achievements for user:', user.user_id);
-      console.log('User stats:', userResults);
-
       for (const achievement of achievements) {
           try {
-              console.log(`Checking achievement ${achievement.achievement_id}: ${achievement.title}`);
-              
               const shouldUnlock = await this.checkAchievementCondition(
                   user,
                   achievement,
                   userResults,
               );
 
-              console.log(`Should unlock: ${shouldUnlock}`);
-
               if (shouldUnlock) {
-                  console.log(`Unlocking achievement ${achievement.achievement_id} for user ${user.user_id}`);
                   const unlocked = await this.unlockAchievement(
                       user.user_id,
                       achievement.achievement_id,
                   );
                   unlockedAchievements.push(unlocked);
-                  console.log(`Achievement unlocked:`, unlocked);
               }
           } catch (error) {
               console.error(
@@ -87,7 +78,6 @@ export class AchievementsService {
           }
       }
 
-      console.log('Unlocked achievements:', unlockedAchievements);
       return unlockedAchievements;
   }
 
@@ -102,7 +92,6 @@ export class AchievementsService {
           totalErrors: number;
       },
   ): Promise<boolean> {
-      // Проверяем, есть ли уже такое достижение у пользователя
       const alreadyUnlocked = await this.userAchievementsRepository.findOne({
           where: {
               user_id: user.user_id,
@@ -111,29 +100,20 @@ export class AchievementsService {
       });
 
       if (alreadyUnlocked) {
-          console.log(`Achievement ${achievement.achievement_id} already unlocked`);
           return false;
       }
 
-      console.log(`Checking condition for achievement ${achievement.achievement_id}`);
-      console.log(`Type: ${achievement.conditionType}, Value: ${achievement.conditionValue}`);
-      console.log(`User stats:`, userResults);
-
       switch (achievement.conditionType) {
           case 'level_completed':
-              console.log(`Levels completed: ${userResults.totalResults} >= ${achievement.conditionValue}?`,
-                  userResults.totalResults >= achievement.conditionValue);
+                  userResults.totalResults >= achievement.conditionValue;
               return userResults.totalResults >= achievement.conditionValue;
           case 'cpm':
-              console.log(`cpm: ${userResults.averageCpm} >= ${achievement.conditionValue}?`,
-                  userResults.averageCpm >= achievement.conditionValue);
+                  userResults.averageCpm >= achievement.conditionValue;
               return userResults.averageCpm >= achievement.conditionValue;
           case 'accuracy':
-              console.log(`Accuracy: ${userResults.averageAccuracy} >= ${achievement.conditionValue}?`,
-                  userResults.averageAccuracy >= achievement.conditionValue);
+                  userResults.averageAccuracy >= achievement.conditionValue;
               return userResults.averageAccuracy >= achievement.conditionValue;
           default:
-              console.log(`Unknown condition type: ${achievement.conditionType}`);
               return false;
       }
   }

@@ -8,7 +8,7 @@ export class BattleSystem {
     private scene: Scene;
     private character: Character;
     private scoreManager: ScoreManager;
-    private enemyManager: any; // Можно типизировать точнее
+    private enemyManager: any;
     private inputSystem: InputSystem;
     public isBattleMode: boolean = false;
     private battleEnemy: Enemy | null = null;
@@ -18,7 +18,7 @@ export class BattleSystem {
     private battleBackground!: GameObjects.Rectangle;
     private isProcessingInput: boolean = false;
     private attackTimer!: Phaser.Time.TimerEvent;
-    private timeToAttack: number = 5000; // 5 секунд
+    private timeToAttack: number = 5000;
     private timeLeft: number = this.timeToAttack;
     private timerBar!: Phaser.GameObjects.Graphics;
     private isBattleInputActive: boolean = false;
@@ -58,7 +58,7 @@ export class BattleSystem {
                         enemy.y
                     ) <= battleDistance
                 ) {
-                    this.startBattle(enemy, availableChars); // Передаем строку символов
+                    this.startBattle(enemy, availableChars);
                 }
             });
     }
@@ -76,7 +76,7 @@ export class BattleSystem {
         this.battleStartTimer = this.scene.time.addEvent({
             delay: 1000,
             callback: () => {
-                this.beginActualBattle(availableChars); // Передаем строку символов
+                this.beginActualBattle(availableChars);
             },
             callbackScope: this
         });
@@ -106,7 +106,6 @@ export class BattleSystem {
         .setDepth(200)
         .setScrollFactor(0);
 
-        // Анимация мигания
         this.scene.tweens.add({
             targets: this.battleStartText,
             alpha: 0.3,
@@ -117,17 +116,13 @@ export class BattleSystem {
     }
 
     private beginActualBattle(availableChars: string) {
-        // Удаляем текст предупреждения
         this.battleStartText?.destroy();
 
-        // Генерируем случайную последовательность из 8 символов
         this.battleSequence = this.generateBattleSequence(availableChars, 8);
         this.battleInputIndex = 0;
 
-        // Настройка камеры для боя
         this.scene.cameras.main.zoomTo(2, 500);
 
-        // Создание интерфейса боя
         this.createBattleInterface();
         this.createTimerBar();
         this.resetAttackTimer();
@@ -135,7 +130,6 @@ export class BattleSystem {
         this.isBattleInputActive = true;
         this.inputSystem.setInputActive(false);
 
-        // Переключение обработчиков ввода
         this.scene.input.keyboard?.off('keydown');
         this.scene.input.keyboard?.on('keydown', this.handleBattleInput.bind(this));
     }
@@ -150,7 +144,6 @@ export class BattleSystem {
     }
 
     private createBattleInterface() {
-        // Фон для интерфейса боя
         this.battleBackground = this.scene.add
             .rectangle(
                 this.scene.scale.width / 2,
@@ -163,7 +156,6 @@ export class BattleSystem {
             .setDepth(103)
             .setScrollFactor(0);
 
-        // Контейнер для символов
         this.battleSymbolContainer = this.scene.add
             .container(
                 this.scene.scale.width / 2,
@@ -205,7 +197,6 @@ export class BattleSystem {
                 xPosition += symbolSpacing;
             });
 
-        // Текущий символ
         if (this.battleInputIndex < this.battleSequence.length) {
             this.battleSymbolContainer.add(
                 this.scene.add
@@ -220,7 +211,6 @@ export class BattleSystem {
             xPosition += symbolSpacing;
         }
 
-        // Будущие символы
         this.battleSequence
             .slice(this.battleInputIndex + 1)
             .forEach((symbol) => {
@@ -235,10 +225,8 @@ export class BattleSystem {
 
 
     private createTimerBar() {
-        // Удаляем старую полосу, если есть
         this.timerBar?.destroy();
         
-        // Создаем красную полосу под символами ввода
         this.timerBar = this.scene.add.graphics()
             .setScrollFactor(0)
             .setDepth(105);
@@ -285,10 +273,8 @@ export class BattleSystem {
     private enemyAttack() {
         if (!this.isBattleMode || !this.battleEnemy) return;
         
-        // Враг атакует
         this.battleEnemy.playAttackAnimation();
         
-        // Персонаж получает урон
         this.character.takeDamage();
         
     }
@@ -298,13 +284,10 @@ export class BattleSystem {
 
         if (event.key.toLowerCase() === this.battleSequence[this.battleInputIndex]) {
             
-            // Записываем правильный ввод
             this.scoreManager.recordCorrectChar(true);
             
-            // Персонаж атакует
             this.character.attack();
             
-            // Враг получает урон
             if (this.battleEnemy) {
                 this.battleEnemy.takeHit();
             }
@@ -329,31 +312,26 @@ export class BattleSystem {
             this.battleEnemy.takeDamage();
         }
         
-        // Сброс состояния боя
         this.isBattleMode = false;
         this.isBattleInputActive = false;
         this.battleEnemy = null;
         this.attackTimer?.destroy();
 
-        // Удаление интерфейса боя
         this.battleBackground?.destroy();
         this.battleSymbolContainer?.destroy();
         this.timerBar?.destroy();
         this.battleStartTimer?.destroy();
         this.battleStartText?.destroy();
 
-        // Восстановление камеры
         this.scene.cameras.main.pan(this.character.x, this.character.y, 500);
         this.scene.cameras.main.zoomTo(1.3, 500);
 
-        // Полный сброс обработчиков ввода
         this.scene.input.keyboard?.off('keydown', this.handleBattleInput);
 
-        // Восстанавливаем обычный обработчик ввода
         this.scene.time.delayedCall(100, () => {
             this.inputSystem.resetSequence();
             this.inputSystem.registerInputHandler();
-            this.inputSystem.setInputActive(true); // Явно включаем основной ввод
+            this.inputSystem.setInputActive(true);
         });
     }   
 

@@ -26,7 +26,6 @@ export class Intro extends Scene {
     this.map = this.make.tilemap({ key: "intro-bg-map" });
         this.tileset = this.map.addTilesetImage("1", "intro-tiles");
 
-        // Сначала создаем слои без смещения
         this.backgroundLayer = this.map
             .createLayer("main", this.tileset)
             .setDepth(2);
@@ -34,18 +33,15 @@ export class Intro extends Scene {
             .createLayer("background", this.tileset)
             .setDepth(1);
 
-        // Масштабируем слои по ширине экрана
         const mapWidth = this.map.widthInPixels;
         const scaleRatio = this.scale.width / mapWidth;
         this.backgroundLayer.setScale(scaleRatio);
         this.backgroundLayer_2.setScale(scaleRatio);
-        // Теперь позиционируем их внизу экрана
         const layerHeight = this.backgroundLayer.displayHeight;
         const layerY = this.scale.height - layerHeight;
     
         this.backgroundLayer.setY(layerY);
     this.backgroundLayer_2.setY(layerY);
-    // Фоновые изображения
         this.add.image(0, 0, "bg-sky")
             .setOrigin(0, 0)
             .setDisplaySize(this.scale.width, this.scale.height);
@@ -61,7 +57,6 @@ export class Intro extends Scene {
         .setOrigin(0, 0)
             .setDisplaySize(this.scale.width, this.scale.height);
 
-        // Логотип
         this.logo = this.add.image(this.scale.width / 2, this.scale.height / 4, "logo")
         .setOrigin(0.5)
         .setDepth(2)
@@ -83,7 +78,6 @@ export class Intro extends Scene {
             }
         ).setDepth(3);
         
-        // Кнопка "О проекте"
         this.aboutButton = this.createButton(
             this.scale.width / 2,
             this.startButton.y + 100,
@@ -93,7 +87,6 @@ export class Intro extends Scene {
             }
         ).setDepth(3);
         
-        // Добавляем элементы в массив после их создания
         this.interactiveElements.push(this.startButton, this.aboutButton);
         if (this.startButton && this.aboutButton) {
             this.interactiveElements.push(this.startButton, this.aboutButton);
@@ -147,7 +140,6 @@ export class Intro extends Scene {
 
     private async checkAuth(): Promise<string | false> {
         try {
-            // Сначала проверяем, есть ли валидный access token
             const response = await fetch('http://localhost:3000/auth/check', {
                 method: 'GET',
                 credentials: 'include',
@@ -156,12 +148,10 @@ export class Intro extends Scene {
             if (response.ok) {
                 const data = await response.json();
                 
-                // Если пользователь аутентифицирован, возвращаем текущий токен
                 if (data.authenticated && data.accessToken) {
                     return data.accessToken;
                 }
                 
-                // Если access token истек, но есть refresh token
                 if (data.authenticated) {
                     const tokensResponse = await fetch('http://localhost:3000/auth/refresh', {
                         method: 'POST',
@@ -246,14 +236,12 @@ export class Intro extends Scene {
     }
 
      private disableBackgroundInteractivity() {
-        // Отключаем интерактивность всех элементов фона
         this.interactiveElements.forEach(element => {
             if (element && typeof element.setInteractive === 'function') {
                 this.removeInteractiveElement(element);
             }
         });
         
-        // Также можно добавить визуальный эффект затемнения
         this.tweens.add({
             targets: [this.logo, this.startButton, this.aboutButton],
             alpha: 0.5,
@@ -265,7 +253,6 @@ export class Intro extends Scene {
     }
     private enableBackgroundInteractivity() {
     this.interactiveElements.forEach(element => {
-        // Проверяем, что элемент существует и имеет связь со сценой
         if (element && element.scene && typeof element.setInteractive === 'function') {
             try {
                 if (element instanceof Phaser.GameObjects.Container) {
@@ -302,7 +289,6 @@ export class Intro extends Scene {
                 }
 
                 const data = await response.json();
-                console.log('Успешный вход:', data);
                 
                 this.hideForm();
                 this.scene.start('Map', { accessToken: data.accessToken });
@@ -329,7 +315,6 @@ export class Intro extends Scene {
                 }
 
                 const data = await response.json();
-                console.log('Успешная регистрация:', data);
                 this.hideForm();
                 this.scene.start('Map', { accessToken: data.accessToken });
             } catch (error) {

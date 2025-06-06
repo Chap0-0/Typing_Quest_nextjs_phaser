@@ -12,7 +12,6 @@ export class UsersService {
   ) {}
 
   async createUser(username: string, email: string, password: string): Promise<User> {
-    // Проверяем, существует ли пользователь с таким email или username
     const existingUser = await this.usersRepository.findOne({
       where: [{ email }, { username }],
     });
@@ -25,11 +24,9 @@ export class UsersService {
       }
     }
 
-    // Хешируем пароль
     const salt = await bcrypt.genSalt();
     const passwordHash = await bcrypt.hash(password, salt);
 
-    // Создаем нового пользователя
     const user = this.usersRepository.create({
       username,
       email,

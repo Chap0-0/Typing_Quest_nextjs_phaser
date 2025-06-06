@@ -1,6 +1,5 @@
 import { Scene } from "phaser";
 
-// ScoreManager.ts
 export class ScoreManager {
     private startTime: number;
     private endTime: number;
@@ -13,13 +12,13 @@ export class ScoreManager {
     private speedSamples: {time: number, cpm: number}[] = [];
     private lastSampleTime: number = 0;
     private correctCharsInSample: number = 0;
-    private sampleInterval: number = 2000; // Интервал сбора данных в мс
-    private sampleStartTime: number = 0; // Добавляем время начала сэмпла
+    private sampleInterval: number = 2000;
+    private sampleStartTime: number = 0;
 
     constructor(private scene: Scene) {
         this.startTime = Date.now();
         this.lastKeyTime = this.startTime;
-        this.sampleStartTime = this.startTime; // Инициализируем время начала сэмпла
+        this.sampleStartTime = this.startTime;
     }
 
 public recordCorrectChar(isBattle: boolean = false) {
@@ -31,22 +30,20 @@ public recordCorrectChar(isBattle: boolean = false) {
         this.totalChars++;
         this.correctCharsInSample++;
         
-        // Записываем данные каждые sampleInterval миллисекунд
         if (now - this.lastSampleTime >= this.sampleInterval) {
-            const timeElapsed = (now - this.sampleStartTime) / 1000; // Время сэмпла в секундах
+            const timeElapsed = (now - this.sampleStartTime) / 1000;
             const minutesElapsed = timeElapsed / 60;
             
             const cpm = this.correctCharsInSample / Math.max(minutesElapsed, 0.0167);
             
             this.speedSamples.push({
-                time: (now - this.startTime) / 1000, // Общее время с начала уровня
+                time: (now - this.startTime) / 1000,
                 cpm: cpm
             });
             
-            // Сбрасываем счётчики для нового сэмпла
             this.correctCharsInSample = 0;
             this.lastSampleTime = now;
-            this.sampleStartTime = now; // Обновляем время начала нового сэмпла
+            this.sampleStartTime = now;
         }
     }
 
@@ -63,7 +60,6 @@ public recordCorrectChar(isBattle: boolean = false) {
         return this.totalChars > 0 ? (this.correctChars / this.totalChars) * 100 : 0;
     }
 
-    // Добавляем методы для получения раздельной статистики
     public getBattleAccuracy(): number {
         return this.battleTotal > 0
             ? (this.battleCorrect / this.battleTotal) * 100
@@ -78,7 +74,7 @@ public recordCorrectChar(isBattle: boolean = false) {
 
     private recordTypingSpeed() {
         const now = Date.now();
-        const timeDiff = (now - this.lastKeyTime) / 1000; // в секундах
+        const timeDiff = (now - this.lastKeyTime) / 1000;
         const speed = 1 / timeDiff; // символы в секунду
 
         this.typingSpeedHistory.push({
@@ -96,13 +92,11 @@ public recordCorrectChar(isBattle: boolean = false) {
     public getAverageSpeed(): number {
         if (this.speedSamples.length === 0) return 0;
         
-        // Рассчитываем среднее cpm из всех сэмплов
         const sum = this.speedSamples.reduce((acc, curr) => acc + curr.cpm, 0);
         return sum / this.speedSamples.length;
     }
 
     public getSpeedHistory(): Array<{time: number, speed: number}> {
-        // Возвращаем реальные данные вместо заглушки
         return this.speedSamples.map(sample => ({
             time: sample.time,
             speed: sample.cpm
@@ -124,7 +118,6 @@ public recordCorrectChar(isBattle: boolean = false) {
         const cpm = this.getAverageSpeed();
         const errorsCount = this.getIncorrectCount();
         
-        // Та же формула, что и на сервере
         const accuracyMultiplier = accuracy;
         const timeMultiplier = 1 + (1 - timeTaken / 180);
         const errorsPenalty = errorsCount * 5;

@@ -19,24 +19,21 @@ export class UISystem {
         this.scene = scene;
     }
 
-    // ===== Система статистики =====
     public createStatsDisplay() {
         const interfaceHeight = this.scene.scale.height * 0.2;
         const interfaceY = this.scene.scale.height - interfaceHeight;
 
-        // Фон статистики (используем такое же изображение как для ввода)
         const bg = this.scene.add
             .image(this.scene.scale.width / 2, interfaceY - 60, "stats")
             .setDisplaySize(460, 60)
             .setScrollFactor(0)
             .setDepth(105);
 
-        // Текст статистики (черные буквы)
         this.statsText = this.scene.add
             .text(this.scene.scale.width / 2, interfaceY - 70, "", {
                 fontFamily: "RuneScape",
                 fontSize: "20px",
-                color: "#000000", // Черный цвет текста
+                color: "#000000",
                 padding: { x: 10, y: 5 },
                 align: "center",
             })
@@ -44,7 +41,6 @@ export class UISystem {
             .setScrollFactor(0)
             .setDepth(106);
 
-        // Добавляем небольшую тень для лучшей читаемости
         this.statsText.setShadow(1, 1, "rgba(255,255,255,0.5)", 1);
 
         this.livesText = this.scene.add
@@ -81,7 +77,6 @@ export class UISystem {
         }
     }
 
-    // ===== Интерфейс ввода =====
     public createInputInterface() {
         const interfaceHeight = this.scene.scale.height * 0.4;
         const interfaceY = this.scene.scale.height - interfaceHeight;
@@ -125,7 +120,6 @@ export class UISystem {
         const symbolSpacing = 36;
         let xPosition = 0;
 
-        // Прошлые символы
         const pastStart = Math.max(0, currentInputIndex - 9);
         fullSequence.slice(pastStart, currentInputIndex).forEach((symbol) => {
             this.symbolContainer.add(
@@ -136,7 +130,6 @@ export class UISystem {
             xPosition += symbolSpacing;
         });
 
-        // Текущий символ
         if (currentInputIndex < fullSequence.length) {
             this.symbolContainer.add(
                 this.scene.add
@@ -151,7 +144,6 @@ export class UISystem {
             xPosition += symbolSpacing;
         }
 
-        // Будущие символы
         fullSequence
             .slice(
                 currentInputIndex + 1,
@@ -172,28 +164,25 @@ export class UISystem {
     }
 
     private createModalContainers() {
-        // Удаляем старые контейнеры, если есть
         const oldPause = document.getElementById('pause-modal-container');
         const oldResults = document.getElementById('results-modal-container');
         if (oldPause) oldPause.remove();
         if (oldResults) oldResults.remove();
 
-        // Создаем новые контейнеры
         this.pauseModalContainer = document.createElement('div');
         this.pauseModalContainer.id = 'pause-modal-container';
-        this.pauseModalContainer.style.display = 'none'; // Скрываем по умолчанию
+        this.pauseModalContainer.style.display = 'none';
 
         this.resultsModalContainer = document.createElement('div');
         this.resultsModalContainer.id = 'results-modal-container';
-        this.resultsModalContainer.style.display = 'none'; // Скрываем по умолчанию
+        this.resultsModalContainer.style.display = 'none';
 
-        // Добавляем в DOM
         document.getElementById('game-container')?.appendChild(this.pauseModalContainer);
         document.getElementById('game-container')?.appendChild(this.resultsModalContainer);
     }
 
     public createPauseSystem(togglePause: () => void, toggleAudio: () => void, returnToMap: () => void) {
-        this.createModalContainers(); // Контейнеры создаются со стилем display: none
+        this.createModalContainers();
         
         const pauseButton = this.scene.add
             .image(window.innerWidth / 7, 140, "pause_button")
@@ -202,7 +191,7 @@ export class UISystem {
             .setDepth(10000)
             .setScale(5)
             .on("pointerdown", () => {
-                togglePause(); // Вызовет setPauseMenuVisible с нужным значением
+                togglePause();
             });
 
         if (!this.pauseModalRoot) {
@@ -237,7 +226,6 @@ export class UISystem {
             this.resultsModalRoot = createRoot(this.resultsModalContainer);
         }
 
-        // Показываем контейнер перед рендерингом
         this.resultsModalContainer.style.display = 'block';
 
         this.resultsModalRoot.render(
@@ -253,7 +241,6 @@ export class UISystem {
         this.pauseModalContainer.style.display = visible ? 'block' : 'none';
     }
 
-    // Обновим метод cleanup:
     public cleanup() {
         if (this.pauseModalRoot) {
             this.pauseModalRoot.unmount();

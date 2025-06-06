@@ -1,4 +1,3 @@
-// managers/EnemyManager.ts
 import { Enemy } from "@/game/entities/Enemy";
 import { Physics, Scene, Tilemaps } from "phaser";
 
@@ -45,12 +44,12 @@ export class EnemyManager {
 
     public cleanup() {
         if (this.enemies instanceof Phaser.GameObjects.Group) {
-            this.enemies.clear(true, true); // Уничтожаем все объекты в группе
+            this.enemies.clear(true, true);
         } else if (Array.isArray(this.enemies)) {
             this.enemies.forEach(enemy => enemy.destroy());
             this.enemies = [];
         } else {
-            this.enemies = []; // Просто сбрасываем
+            this.enemies = [];
         }
     }
 }

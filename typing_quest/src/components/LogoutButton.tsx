@@ -1,4 +1,3 @@
-// LogoutButton.tsx
 import React from 'react';
 
 interface LogoutButtonProps {

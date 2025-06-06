@@ -25,7 +25,6 @@ export class ResultsController {
   ) {
     const userId = req.user['sub'];
     
-    // Сохраняем результат
     const result = await this.resultsService.createResult(
       userId,
       saveResultDto.levelId,
@@ -35,7 +34,6 @@ export class ResultsController {
       saveResultDto.errorsCount,
     );
 
-    // Получаем топ-5 результатов для этого уровня
     const leaderboard = await this.resultsService.getLevelResults(saveResultDto.levelId, 5);
 
     return {

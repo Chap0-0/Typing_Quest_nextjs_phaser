@@ -19,15 +19,12 @@ export class Character extends Physics.Arcade.Sprite {
         scene.add.existing(this);
         scene.physics.add.existing(this);
 
-        // Настройки отображения
         this.setScale(2);
         this.setDepth(100);
 
-        // Физические настройки
         this.body.setGravityY(1000);
         this.setMaxVelocity(600, 1200);
 
-        // Изначальный хитбокс
         this.updateHitbox("idle");
     }
 
@@ -74,7 +71,6 @@ export class Character extends Physics.Arcade.Sprite {
     }
 
     static createAnimations(scene: Scene) {
-        // Анимация покоя
         scene.anims.create({
             key: "idle",
             frames: scene.anims.generateFrameNumbers("idle", {
@@ -84,7 +80,6 @@ export class Character extends Physics.Arcade.Sprite {
             frameRate: 10,
         });
 
-        // Анимация ходьбы
         scene.anims.create({
             key: "walk",
             frames: scene.anims.generateFrameNumbers("walk", {
@@ -94,7 +89,6 @@ export class Character extends Physics.Arcade.Sprite {
             frameRate: 10,
         });
 
-        // Анимация прыжка (только вверх)
         scene.anims.create({
             key: "jump_up",
             frames: scene.anims.generateFrameNumbers("jump", {
@@ -105,7 +99,6 @@ export class Character extends Physics.Arcade.Sprite {
             repeat: 0,
         });
 
-        // Анимация падения (только вниз)
         scene.anims.create({
             key: "fall",
             frames: [{ key: "jump", frame: 3 }],
@@ -169,13 +162,11 @@ export class Character extends Physics.Arcade.Sprite {
         if (isOnGround) {
             this.isJumping = false;
             if (this.isMoving) {
-                // Автоматически определяем режим движения
                 const distanceToTarget = this.targetX - this.x;
                 this.isRunning = distanceToTarget > this.runThreshold;
                 
                 this.play(this.isRunning ? "run" : "walk", true);
                 
-                // Автоматическая остановка при достижении цели
                 if (distanceToTarget <= 0) {
                     this.stopMoving();
                 }
@@ -208,7 +199,6 @@ export class Character extends Physics.Arcade.Sprite {
         this.targetX += distanceToAdd;
         this.isMoving = true;
         
-        // Определяем скорость движения
         const speed = this.isRunning ? this.runSpeed : this.walkSpeed;
         this.setVelocityX(speed);
     }
@@ -259,7 +249,6 @@ export class Character extends Physics.Arcade.Sprite {
         const number = this.numberAnim[Math.floor(Math.random() * this.numberAnim.length)];
         this.play(`attack_${number}`, true);
         
-        // Сброс cooldown после анимации
         this.once(`animationcomplete-attack_${number}`, () => {
             this.battleMode = false;
             this.attackCooldown = false;
@@ -282,21 +271,18 @@ export class Character extends Physics.Arcade.Sprite {
         this.isTakingDamage = true;
         this.lives = Math.max(0, this.lives - 1);
         
-        // Анимация получения урона
-        this.setTint(0xff0000); // Красный tint
+        this.setTint(0xff0000);
         this.scene.time.delayedCall(300, () => {
             this.clearTint();
             this.isTakingDamage = false;
         });
         
-        // Проверка на смерть
         if (this.lives <= 0) {
             this.die();
         }
     }
 
     private die() {
-        // Анимация смерти и завершение уровня
         this.play("die", true);
         this.scene.time.delayedCall(1000, () => {
             this.scene.scene.start("Map");

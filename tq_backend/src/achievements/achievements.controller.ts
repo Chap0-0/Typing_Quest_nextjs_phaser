@@ -46,9 +46,8 @@ export class AchievementsController {
   @Post('check')
   @UseGuards(AccessTokenGuard)
   async checkAchievements(@Req() req: Request) {
-      console.log('User from request:', req.user);
-      const userId = req.user['sub']; // Используем sub вместо user.user_id
-      const user = { user_id: userId } as User; // Создаем объект пользователя с правильным полем
+      const userId = req.user['sub'];
+      const user = { user_id: userId } as User;
       return this.achievementsService.checkAndUnlockAchievements(user);
   }
 

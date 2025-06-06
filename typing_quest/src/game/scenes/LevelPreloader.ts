@@ -10,7 +10,6 @@ export class LevelPreloader extends Scene {
 
     init(data: { levelConfig: any, accessToken: string }) {
         this.data = data.levelConfig;
-        console.log(this.data);
         this.accessToken = data.accessToken;
         this.createProgressBar();
     }
@@ -38,7 +37,6 @@ export class LevelPreloader extends Scene {
 
     preload() {
         
-        // Затем остальные ресурсы
         this.loadResourcesForLevel(this.data.levelId);
         Character.preload(this);
     }
@@ -58,7 +56,6 @@ export class LevelPreloader extends Scene {
         this.load.setPath('assets/enemies/');
         
         this.data.enemyTypes.forEach((enemyType: any) => {
-            // Загружаем отдельные файлы для каждой анимации
             if (enemyType.animations) {
                 Object.entries(enemyType.animations).forEach(([animName, animData]: [string, any]) => {
                     const textureKey = `enemy_${enemyType.type}_${animName}`;
@@ -75,7 +72,6 @@ export class LevelPreloader extends Scene {
                 });
             }
             
-            // Загружаем звуки если есть
             if (enemyType.sounds) {
                 enemyType.sounds.forEach((sound: string) => {
                     this.load.audio(`enemy_${enemyType.type}_${sound}`, sound);

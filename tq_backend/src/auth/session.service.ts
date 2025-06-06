@@ -13,10 +13,8 @@ export class SessionService {
   ) {}
 
   async createSession(userId: number, refreshToken: string): Promise<UserSession> {
-    // Хешируем refresh token перед сохранением в БД
     const refreshTokenHash = await bcrypt.hash(refreshToken, 10);
     
-    // Устанавливаем срок действия сессии (например, 30 дней)
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 30);
 

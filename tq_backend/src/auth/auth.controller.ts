@@ -17,17 +17,16 @@ export class AuthController {
     const user = await this.authService.validateUser(loginDto.username, loginDto.password);
     const tokens = await this.authService.login(user);
     
-    // Устанавливаем куки
     res.cookie('refreshToken', tokens.refresh_token, {
       httpOnly: true,
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 дней
+      maxAge: 30 * 24 * 60 * 60 * 1000,
       sameSite: 'strict',
       secure: process.env.NODE_ENV === 'production',
     });
 
     res.cookie('sessionId', tokens.session_id, {
       httpOnly: true,
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 дней
+      maxAge: 30 * 24 * 60 * 60 * 1000,
       sameSite: 'strict',
       secure: process.env.NODE_ENV === 'production',
     });
@@ -46,17 +45,17 @@ export class AuthController {
       registerDto.password,
     );
     
-    // Устанавливаем куки
+
     res.cookie('refreshToken', tokens.refresh_token, {
       httpOnly: true,
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 дней
+      maxAge: 30 * 24 * 60 * 60 * 1000,
       sameSite: 'strict',
       secure: process.env.NODE_ENV === 'production',
     });
 
     res.cookie('sessionId', tokens.session_id, {
       httpOnly: true,
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 дней
+      maxAge: 30 * 24 * 60 * 60 * 1000,
       sameSite: 'strict',
       secure: process.env.NODE_ENV === 'production',
     });
@@ -77,17 +76,17 @@ export class AuthController {
     const refreshToken = req.cookies['refreshToken'];
     const tokens = await this.authService.refreshTokens(session.session_id, refreshToken);
     
-    // Обновляем куки
+
     res.cookie('refreshToken', tokens.refresh_token, {
       httpOnly: true,
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 дней
+      maxAge: 30 * 24 * 60 * 60 * 1000, 
       sameSite: 'strict',
       secure: process.env.NODE_ENV === 'production',
     });
 
     res.cookie('sessionId', tokens.session_id, {
       httpOnly: true,
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 дней
+      maxAge: 30 * 24 * 60 * 60 * 1000,
       sameSite: 'strict',
       secure: process.env.NODE_ENV === 'production',
     });

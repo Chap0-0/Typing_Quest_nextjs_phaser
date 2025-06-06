@@ -1,4 +1,3 @@
-// entities/Enemy.ts
 import { Physics, Scene } from "phaser";
 
 export class Enemy extends Physics.Arcade.Sprite {
@@ -6,9 +5,9 @@ export class Enemy extends Physics.Arcade.Sprite {
     private bodyWidth: number;
     private bodyHeight: number;
     private currentDirection: number = -1;
-    private patrolDistance: number; // Дистанция патрулирования
-    private startX: number; // Начальная позиция X
-    private moveSpeed: number; // Скорость движения
+    private patrolDistance: number;
+    private startX: number;
+    private moveSpeed: number;
     private isPatrolling: boolean = true;
     private patrolTimer: Phaser.Time.TimerEvent | null = null;
     private isInBattle: boolean = false;
@@ -25,10 +24,9 @@ export class Enemy extends Physics.Arcade.Sprite {
         scene.add.existing(this);
         scene.physics.add.existing(this);
 
-        this.startX = x; // Сохраняем стартовую позицию
-        this.moveSpeed = config.speed; // Берем скорость из конфига
+        this.startX = x;
+        this.moveSpeed = config.speed;
         this.patrolDistance = config.patrolDistance;
-        // Рассчитываем размеры тела
         this.bodyWidth = this.config.bodyWidth || this.config.frameWidth * 0.6;
         this.bodyHeight =
             this.config.bodyHeight || this.config.frameHeight * 0.8;
@@ -39,12 +37,11 @@ export class Enemy extends Physics.Arcade.Sprite {
             this.config.frameHeight - this.bodyHeight
         );
 
-        // Настройка физики
         scene.time.delayedCall(0, () => {
             this.setGravityY(this.config.gravity);
             this.setCollideWorldBounds(true);
-            this.setImmovable(true); // Чтобы враг не отталкивался от других объектов
-            this.startPatrol(); // Запускаем патрулирование
+            this.setImmovable(true);
+            this.startPatrol();
         });
     }
 
@@ -53,7 +50,6 @@ export class Enemy extends Physics.Arcade.Sprite {
         this.isPatrolling = true;
         this.setVelocityX(this.moveSpeed * this.currentDirection);
 
-        // Проверяем, существует ли анимация перед воспроизведением
         if (this.config.animations?.walk) {
             this.play(`enemy_${this.type}_walk`);
         }
@@ -87,7 +83,6 @@ export class Enemy extends Physics.Arcade.Sprite {
     update() {
         if (!this.isAlive) return;
 
-        // Поворот спрайта по направлению движения
         if (!this.isInBattle) {
             this.setFlipX(this.currentDirection > 0);
         }    
@@ -113,7 +108,6 @@ export class Enemy extends Physics.Arcade.Sprite {
             this.play(`enemy_${this.type}_attack`, true);
         }
         
-        // Возвращаемся к idle после атаки
         this.scene.time.delayedCall(500, () => {
             if (this.config.animations?.idle) {
                 this.play(`enemy_${this.type}_idle`, true);
@@ -126,12 +120,10 @@ export class Enemy extends Physics.Arcade.Sprite {
         
         this.isTakingHit = true;
         
-        // Проигрываем анимацию получения урона
         if (this.config.animations?.hit) {
             this.play(`enemy_${this.type}_hit`, true);
         }
         
-        // Возвращаемся к idle анимации после получения урона
         this.scene.time.delayedCall(300, () => {
             this.isTakingHit = false;
             if (this.config.animations?.idle) {
@@ -150,14 +142,12 @@ export class Enemy extends Physics.Arcade.Sprite {
         }
         this.setVelocityX(0);
 
-        // Полностью очищаем все таймеры
         if (this.patrolTimer) {
             this.patrolTimer.destroy();
             this.patrolTimer = null;
         }
     }
     public faceTo(targetX: number) {
-        // Определяем направление к цели
         const direction = targetX > this.x ? 1 : -1;
         this.setFlipX(direction > 0);
         this.currentDirection = direction;

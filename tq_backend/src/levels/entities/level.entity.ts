@@ -13,10 +13,10 @@ export class Level {
   description: string;
 
   @Column({ type: 'integer', nullable: true })
-  difficulty: number; // 1-5 scale
+  difficulty: number;
 
   @Column({ type: 'integer' })
-  time_limit: number; // in seconds
+  time_limit: number;
 
   @Column({ type: 'jsonb' })
   data: {
@@ -36,6 +36,6 @@ export class Level {
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   created_at: Date;
 
-  @OneToMany(() => Result, (result) => result.level) // Исправлено на result.level
+  @OneToMany(() => Result, (result) => result.level)
   results: Result[];
 }

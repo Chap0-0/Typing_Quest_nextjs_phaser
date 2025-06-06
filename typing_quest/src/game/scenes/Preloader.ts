@@ -23,7 +23,6 @@ export class Preloader extends Scene {
     }
 
     preload() {
-        // Загрузка активов для игры
         this.load.setPath('assets/intro');
         this.load.tilemapTiledJSON('intro-bg-map', 'intro-bg-map.tmj');
         this.load.image('intro-tiles', 'Intro-tiles.png');

@@ -23,10 +23,8 @@ export class AuthService {
       throw new UnauthorizedException('Неверное имя пользователя или пароль');
     }
 
-    // Обновляем время последнего входа
     await this.usersService.updateLastLogin(user.user_id);
 
-    // Возвращаем пользователя без пароля
     const { password_hash, ...result } = user;
     return result;
   }
@@ -38,17 +36,14 @@ export class AuthService {
       email: user.email,
     };
 
-    // Генерируем access token
     const accessToken = this.jwtService.sign(payload, {
       expiresIn: '15m',
     });
 
-    // Генерируем refresh token
     const refreshToken = this.jwtService.sign(payload, {
       expiresIn: '30d',
     });
 
-    // Создаем сессию в базе данных
     const session = await this.sessionService.createSession(user.user_id, refreshToken);
 
     return {
@@ -64,25 +59,21 @@ export class AuthService {
   }
 
   async refreshTokens(sessionId: string, refreshToken: string) {
-    // Проверяем валидность refresh token
     const isValid = await this.sessionService.validateRefreshToken(sessionId, refreshToken);
     if (!isValid) {
       throw new UnauthorizedException('Недействительный refresh token');
     }
 
-    // Получаем сессию
     const session = await this.sessionService.findSessionById(sessionId);
     if (!session || new Date(session.expires_at) < new Date()) {
       throw new UnauthorizedException('Сессия истекла');
     }
 
-    // Получаем пользователя
     const user = await this.usersService.findOneById(session.user_id);
     if (!user) {
       throw new UnauthorizedException('Пользователь не найден');
     }
 
-    // Генерируем новые токены
     const payload = { 
       username: user.username, 
       sub: user.user_id,
@@ -97,7 +88,6 @@ export class AuthService {
       expiresIn: '30d',
     });
 
-    // Удаляем старую сессию и создаем новую
     await this.sessionService.deleteSession(sessionId);
     const newSession = await this.sessionService.createSession(user.user_id, newRefreshToken);
 
