@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { User } from 'src/users/entities/user.entity'; 
-import { Level } from 'src/levels/entities/level.entity'; 
+import { User } from '../../users/entities/user.entity'; 
+import { Level } from '../../levels/entities/level.entity'; 
 
 @Entity('results')
 export class Result {
