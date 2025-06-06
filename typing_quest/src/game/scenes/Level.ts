@@ -247,7 +247,7 @@ export class Level extends Scene {
         }
     }
 
-    private cleanupScene() {
+    cleanupScene() {
         // Останавливаем музыку
         if (this.backgroundMusic) {
             this.backgroundMusic.stop();

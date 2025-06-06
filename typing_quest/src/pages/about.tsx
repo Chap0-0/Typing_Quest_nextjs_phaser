@@ -36,14 +36,14 @@ const About = () => {
                     title="КРАТКОЕ ОПИСАНИЕ"
                     textContent={
                         <>
-                            <p className="mb-4 text-2xl">TYPING QUEST - это интерактивный тренажер печати с элементами RPG.</p>
-                            <p className="text-2xl">Повышайте скорость набора текста, проходя увлекательные квесты и сражаясь с клавиатурными монстрами.</p>
+                            <p className="mb-4 text-2xl">Typing Quest - это игровой тренажер слепой печати</p>
+                            <p className="text-2xl">Тренируйте скорость набора текста, проходя уровни и сражаясь с противниками.</p>
                         </>
                     }
                     imageContent={
                         <div className="rounded-lg h-full flex items-center justify-center">
                             <img 
-                                src="/assets/gifs/about_gif_1.gif" 
+                                src="/assets/gifs_and_pics/about_gif_1.gif" 
                                 alt="about_gif_1 animation" 
                                 className="w-full h-64 object-contain"
                             />
@@ -57,14 +57,14 @@ const About = () => {
                     title="ГЛАВНАЯ КАРТА"
                     textContent={
                         <>
-                            <p className="mb-4 text-2xl">Исследуйте пиксельный мир, состоящий из 5 уникальных локаций.</p>
-                            <p className="text-2xl">Каждая локация представляет собой новый уровень сложности с особыми заданиями.</p>
+                            <p className="mb-4 text-2xl">На карте отображаются доступные уровни, каждый из них доступе</p>
+                            <p className="text-2xl">Вы можете выбрать уровень для прохождения или посмотреть свой профиль.</p>
                         </>
                     }
                     imageContent={
                         <div className="rounded-lg h-full flex items-center justify-center">
                             <img 
-                                src="/assets/gifs/about_gif_2.gif" 
+                                src="/assets/gifs_and_pics/about_gif_2.gif" 
                                 alt="about_gif_2 animation" 
                                 className="w-full h-64 object-contain"
                             />
@@ -78,14 +78,14 @@ const About = () => {
                     title="ОСНОВНОЙ ПРОЦЕСС"
                     textContent={
                         <>
-                            <p className="mb-4 text-2xl">Набирайте текст быстрее противников, чтобы побеждать в битвах.</p>
-                            <p className="text-2xl">Зарабатывайте очки опыта и улучшайте свои навыки печати.</p>
+                            <p className="mb-4 text-2xl">Набирайте текст, чтобы управлять персонажем и побеждать противников.</p>
+                            <p className="text-2xl">Ваша скорость печати влияет на движение персонажа и исход боев.</p>
                         </>
                     }
                     imageContent={
                         <div className="rounded-lg h-full flex items-center justify-center">
                             <img 
-                                src="/assets/gifs/battle.gif" 
+                                src="/assets/gifs_and_pics/about_gif_3.gif" 
                                 alt="Battle animation" 
                                 className="w-full h-64 object-contain"
                             />
@@ -99,14 +99,14 @@ const About = () => {
                     title="ТАБЛИЦА ЛИДЕРОВ"
                     textContent={
                         <>
-                            <p className="mb-4 text-2xl">Сравнивайте свои результаты с другими игроками.</p>
-                            <p className="text-2xl">Займите место в топе и получите уникальные достижения!</p>
+                            <p className="mb-4 text-2xl">После прохождения уровня вы увидите свои результаты и сравните их с другими.</p>
+                            <p className="text-2xl">В профиле хранится полная статистика по всем пройденным уровням.</p>
                         </>
                     }
                     imageContent={
                         <div className="rounded-lg h-full flex items-center justify-center">
                             <img 
-                                src="/assets/gifs/leaderboard.gif" 
+                                src="/assets/gifs_and_pics/leaderboard.png" 
                                 alt="Leaderboard animation" 
                                 className="w-full h-64 object-contain"
                             />

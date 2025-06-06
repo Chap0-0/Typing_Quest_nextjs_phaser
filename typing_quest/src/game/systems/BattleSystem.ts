@@ -160,7 +160,7 @@ private createCharacterHpDisplay() {
     private beginActualBattle(availableChars: string) {
         this.battleStartText?.destroy();
 
-        this.battleSequence = this.generateBattleSequence(availableChars, 8);
+        this.battleSequence = this.generateBattleSequence(availableChars, 6);
         this.battleInputIndex = 0;
 
         this.scene.cameras.main.zoomTo(2, 500);
