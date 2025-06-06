@@ -48,14 +48,15 @@ export class Level extends Scene {
             () => this.toggleAudio(),
             () => this.scene.start("Map")
         );
-        
         this.uiSystem.createInputInterface();
-
+        
         this.scoreManager = new ScoreManager(this);
+        
+        const charSet = this.levelConfig[this.levelConfig.selectedLanguage || 'ru'];
         this.inputSystem = new InputSystem(
             this,
             this.scoreManager,
-            this.levelConfig.ru.sequences,
+            [charSet],
             this.distancePerKey
         );
         this.inputSystem.setOnCorrectInputCallback((distance) => {
@@ -78,7 +79,7 @@ export class Level extends Scene {
         if (!this.battleSystem.isBattleMode) {
             this.battleSystem.checkBattleStart(
                 this.battleDistance,
-                this.levelConfig.ru.battleSequences
+                this.levelConfig[this.levelConfig.selectedLanguage || 'ru']
             );
         }
         this.uiSystem.updateStatsDisplay(this.scoreManager, this.character);

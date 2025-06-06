@@ -20,6 +20,7 @@ export class Map extends Scene {
     private profileModalContainer!: HTMLDivElement;
     private profileModalRoot: any = null;
     private interfaceButtonsRoot: any = null;
+    private tokenCheckInterval: any;
     constructor() {
         super("Map");
     }
@@ -64,7 +65,32 @@ export class Map extends Scene {
             .setOrigin(0)
             .setScrollFactor(0)
             .setDepth(-1);
+
+        this.tokenCheckInterval = setInterval(async () => {
+        const newToken = await this.checkToken();
+        if (newToken) {
+            this.accessToken = newToken;
+        }
+    }, 600000);
     }
+
+    private async checkToken(): Promise<string | null> {
+    try {
+        const response = await fetch('http://localhost:3000/auth/refresh', {
+            method: 'POST',
+            credentials: 'include',
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            return data.accessToken;
+        }
+        return null;
+    } catch (error) {
+        console.error('Ошибка обновления токена:', error);
+        return null;
+    }
+    }   
     private createClouds() {
         const cloudTypes = ["cloud1", "cloud2", "cloud3", "cloud4", "cloud5"];
 
@@ -189,7 +215,7 @@ export class Map extends Scene {
                 <ProfileButton onClick={() => this.showProfileModal()} />
                 <LogoutButton onClick={async () => {
                     try {
-                        await fetch("http://localhost:3000/auth/logout", {
+                        await this.fetchWithAuth("http://localhost:3000/auth/logout", {
                             method: "POST",
                             credentials: "include",
                         });
@@ -214,7 +240,7 @@ export class Map extends Scene {
     }
     private async loadLevelsFromServer() {
         try {
-            const response = await fetch("http://localhost:3000/levels", {
+            const response = await this.fetchWithAuth("http://localhost:3000/levels", {
                 method: "GET",
                 headers: {
                     Authorization: `Bearer ${this.accessToken}`,
@@ -258,43 +284,45 @@ export class Map extends Scene {
         document.getElementById("game-container")?.appendChild(this.levelModal);
     }
     private showLevelModal(levelData: any) {
-        this.currentLevelData = levelData;
-        
-        const getProperty = (name: string) => 
+    this.currentLevelData = levelData;
+    
+    const getProperty = (name: string) => 
             levelData.find((p: any) => p.name === name)?.value || "Не указано";
 
-        const levelModalRoot = createRoot(this.levelModal);
-        
-        levelModalRoot.render(
-            React.createElement(LevelModal, {
-                levelData: {
-                    name: getProperty("name"),
-                    difficulty: getProperty("difficulty"),
-                    timeLimit: getProperty("timeLimit"),
-                    description: getProperty("description"),
-                    symbols: "фывапролджэ" // Здесь можно добавить реальные символы
-                },
-                onStart: () => {
-                    const levelConfig = levelData.find(
-                        (p: any) => p.name === "data"
-                    )?.value;
+    const levelConfig = levelData.find((p: any) => p.name === "data")?.value || {};
+    
+    const levelModalRoot = createRoot(this.levelModal);
+    
+    levelModalRoot.render(
+        React.createElement(LevelModal, {
+            levelData: {
+                name: getProperty("name"),
+                difficulty: getProperty("difficulty"),
+                timeLimit: getProperty("timeLimit"),
+                description: getProperty("description"),
+                symbolsRu: levelConfig.ru,
+                symbolsEng: levelConfig.eng,
+            },
+            onStart: (language: 'ru' | 'eng') => {
+                if (levelConfig) {
+                    this.hideLevelModal();
+                    this.destroyInterfaceButtons();
+                    this.scene.start("LevelPreloader", {
+                        levelConfig: {
+                            ...levelConfig,
+                            selectedLanguage: language
+                        },
+                        accessToken: this.accessToken,
+                    });
+                }
+            },
+            onClose: () => this.hideLevelModal()
+        })
+    );
 
-                    if (levelConfig) {
-                        this.hideLevelModal();
-                        this.destroyInterfaceButtons();
-                        this.scene.start("LevelPreloader", {
-                            levelConfig: levelConfig,
-                            accessToken: this.accessToken,
-                        });
-                    }
-                },
-                onClose: () => this.hideLevelModal()
-            })
-        );
-
-        // Пауза игры
-        this.game.loop.sleep();
-    }
+    // Пауза игры
+    this.game.loop.sleep();
+}
 
 
     private hideLevelModal() {
@@ -425,7 +453,7 @@ export class Map extends Scene {
     private async loadProfileData() {
     try {
         // Загружаем статистику пользователя
-        const statsResponse = await fetch("http://localhost:3000/results/user/stats", {
+        const statsResponse = await this.fetchWithAuth("http://localhost:3000/results/user/stats", {
         method: "GET",
         headers: {
             Authorization: `Bearer ${this.accessToken}`,
@@ -433,7 +461,7 @@ export class Map extends Scene {
         });
 
         // Загружаем историю уровней
-        const historyResponse = await fetch("http://localhost:3000/results/user", {
+        const historyResponse = await this.fetchWithAuth("http://localhost:3000/results/user", {
         method: "GET",
         headers: {
             Authorization: `Bearer ${this.accessToken}`,
@@ -441,7 +469,7 @@ export class Map extends Scene {
         });
 
         // Загружаем достижения
-        const achievementsResponse = await fetch("http://localhost:3000/achievements/user", {
+        const achievementsResponse = await this.fetchWithAuth("http://localhost:3000/achievements/user", {
         method: "GET",
         headers: {
             Authorization: `Bearer ${this.accessToken}`,
@@ -449,7 +477,7 @@ export class Map extends Scene {
         });
 
         // Загружаем все возможные достижения
-        const allAchievementsResponse = await fetch("http://localhost:3000/achievements", {
+        const allAchievementsResponse = await this.fetchWithAuth("http://localhost:3000/achievements", {
         method: "GET",
         headers: {
             Authorization: `Bearer ${this.accessToken}`,
@@ -524,5 +552,39 @@ export class Map extends Scene {
         })
     );
     }
-    
+    private async fetchWithAuth(input: RequestInfo, init?: RequestInit): Promise<Response> {
+    let response = await fetch(input, {
+        ...init,
+        headers: {
+            ...init?.headers,
+            Authorization: `Bearer ${this.accessToken}`,
+        },
+        credentials: 'include',
+    });
+
+    // Если токен истек, пробуем обновить его
+    if (response.status === 401) {
+        const refreshResponse = await fetch('http://localhost:3000/auth/refresh', {
+            method: 'POST',
+            credentials: 'include',
+        });
+
+        if (refreshResponse.ok) {
+            const tokensData = await refreshResponse.json();
+            this.accessToken = tokensData.accessToken;
+            
+            // Повторяем исходный запрос с новым токеном
+            response = await fetch(input, {
+                ...init,
+                headers: {
+                    ...init?.headers,
+                    Authorization: `Bearer ${this.accessToken}`,
+                },
+                credentials: 'include',
+            });
+        }
+    }
+
+    return response;
+}
 }

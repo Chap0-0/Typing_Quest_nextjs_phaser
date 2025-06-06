@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 interface LevelModalProps {
   levelData: {
@@ -6,13 +6,16 @@ interface LevelModalProps {
     difficulty: string;
     timeLimit: string;
     description: string;
-    symbols: string;
+    symbolsRu: string;
+    symbolsEng: string;
   };
-  onStart: () => void;
+  onStart: (language: 'ru' | 'eng') => void;
   onClose: () => void;
 }
 
 const LevelModal: React.FC<LevelModalProps> = ({ levelData, onStart, onClose }) => {
+  const [language, setLanguage] = useState<'ru' | 'eng'>('ru');
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div 
@@ -38,10 +41,41 @@ const LevelModal: React.FC<LevelModalProps> = ({ levelData, onStart, onClose }) 
               <span className="text-2xl font-semibold">{levelData.timeLimit} минут</span>
             </div>
             
+            {/* Переключатель языка */}
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-2xl">Язык ввода:</span>
+              <div className="flex items-center">
+                <button
+                  className={`px-4 py-2 text-xl ${language === 'ru' ? 'bg-[#4a752c] text-white' : 'bg-gray-300'}`}
+                  onClick={() => setLanguage('ru')}
+                >
+                  RU
+                </button>
+                <button
+                  className={`px-4 py-2 text-xl ${language === 'eng' ? 'bg-[#4a752c] text-white' : 'bg-gray-300'}`}
+                  onClick={() => setLanguage('eng')}
+                >
+                  ENG
+                </button>
+              </div>
+            </div>
+
+            {/* Блок с символами */}
             <div className="mt-4">
               <div className="text-2xl mb-2">Символы:</div>
-              <div className="text-2xl font-semibold bg-[#e8c9a0] p-2 rounded border border-[#7a5859]">
-                {levelData.symbols}
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <div className="text-xl text-center mb-1">Русские</div>
+                  <div className="text-2xl font-semibold bg-[#e8c9a0] p-2 rounded border border-[#7a5859] text-center">
+                    {levelData.symbolsRu}
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <div className="text-xl text-center mb-1">Английские</div>
+                  <div className="text-2xl font-semibold bg-[#e8c9a0] p-2 rounded border border-[#7a5859] text-center">
+                    {levelData.symbolsEng}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -54,7 +88,7 @@ const LevelModal: React.FC<LevelModalProps> = ({ levelData, onStart, onClose }) 
           {/* Кнопки */}
           <div className="flex flex-col gap-3">
             <button
-              onClick={onStart}
+              onClick={() => onStart(language)}
               className="bg-[#4a752c] hover:bg-[#5a8a3c] text-white py-3 px-6 rounded-lg text-2xl transition-colors border-2 border-[#3a652c]"
             >
               Начать уровень

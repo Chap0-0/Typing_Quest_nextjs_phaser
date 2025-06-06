@@ -41,7 +41,7 @@ export class BattleSystem {
 
     public checkBattleStart(
         battleDistance: number = 100,
-        battleSequences: string[] = []
+        availableChars: string
     ) {
         if (this.isBattleMode) return;
 
@@ -58,13 +58,12 @@ export class BattleSystem {
                         enemy.y
                     ) <= battleDistance
                 ) {
-                    this.startBattle(enemy, battleSequences);
+                    this.startBattle(enemy, availableChars); // Передаем строку символов
                 }
             });
     }
 
-    public startBattle(enemy: Enemy, battleSequences: string[] = []) {
-        // Сохраняем оригинальный обработчик
+    public startBattle(enemy: Enemy, availableChars: string) {
         this.inputSystem.unregisterInputHandler();
         this.isBattleMode = true;
         this.battleEnemy = enemy;
@@ -74,11 +73,10 @@ export class BattleSystem {
 
         this.createBattleStartText();
 
-        // Запускаем таймер перед началом боя
         this.battleStartTimer = this.scene.time.addEvent({
-            delay: 1000, // 1 секунда
+            delay: 1000,
             callback: () => {
-                this.beginActualBattle(battleSequences);
+                this.beginActualBattle(availableChars); // Передаем строку символов
             },
             callbackScope: this
         });
@@ -118,13 +116,12 @@ export class BattleSystem {
         });
     }
 
-    private beginActualBattle(battleSequences: string[]) {
+    private beginActualBattle(availableChars: string) {
         // Удаляем текст предупреждения
         this.battleStartText?.destroy();
 
-        // Выбираем случайную последовательность для боя
-        const randomSequence = Phaser.Utils.Array.GetRandom(battleSequences);
-        this.battleSequence = randomSequence.replace(/_/g, " ").split("");
+        // Генерируем случайную последовательность из 8 символов
+        this.battleSequence = this.generateBattleSequence(availableChars, 8);
         this.battleInputIndex = 0;
 
         // Настройка камеры для боя
@@ -141,6 +138,15 @@ export class BattleSystem {
         // Переключение обработчиков ввода
         this.scene.input.keyboard?.off('keydown');
         this.scene.input.keyboard?.on('keydown', this.handleBattleInput.bind(this));
+    }
+
+    private generateBattleSequence(availableChars: string, length: number): string[] {
+        const sequence = [];
+        for (let i = 0; i < length; i++) {
+            const randomIndex = Math.floor(Math.random() * availableChars.length);
+            sequence.push(availableChars[randomIndex]);
+        }
+        return sequence;
     }
 
     private createBattleInterface() {

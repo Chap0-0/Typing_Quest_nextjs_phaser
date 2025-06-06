@@ -39,51 +39,50 @@ export class Intro extends Scene {
         const scaleRatio = this.scale.width / mapWidth;
         this.backgroundLayer.setScale(scaleRatio);
         this.backgroundLayer_2.setScale(scaleRatio);
-
-    // Теперь позиционируем их внизу экрана
-    const layerHeight = this.backgroundLayer.displayHeight;
-    const layerY = this.scale.height - layerHeight;
+        // Теперь позиционируем их внизу экрана
+        const layerHeight = this.backgroundLayer.displayHeight;
+        const layerY = this.scale.height - layerHeight;
     
-    this.backgroundLayer.setY(layerY);
+        this.backgroundLayer.setY(layerY);
     this.backgroundLayer_2.setY(layerY);
-        // Фоновые изображения
+    // Фоновые изображения
         this.add.image(0, 0, "bg-sky")
             .setOrigin(0, 0)
             .setDisplaySize(this.scale.width, this.scale.height);
         
-        this.bg_clouds_1 = this.add.image(0, 0, "bg-clouds")
+            this.bg_clouds_1 = this.add.image(0, 0, "bg-clouds")
             .setOrigin(0, 0)
             .setDisplaySize(this.scale.width, this.scale.height);
         this.bg_clouds_2 = this.add.image(this.scale.width, 0, "bg-clouds")
-            .setOrigin(0, 0)
-            .setDisplaySize(this.scale.width, this.scale.height);
+        .setOrigin(0, 0)
+        .setDisplaySize(this.scale.width, this.scale.height);
 
         this.add.image(0, 0, "bg-mounts")
-            .setOrigin(0, 0)
+        .setOrigin(0, 0)
             .setDisplaySize(this.scale.width, this.scale.height);
 
         // Логотип
         this.logo = this.add.image(this.scale.width / 2, this.scale.height / 4, "logo")
-            .setOrigin(0.5)
-            .setDepth(2)
-            .setScale(0.6);
-
+        .setOrigin(0.5)
+        .setDepth(2)
+        .setScale(0.6);
+        
         this.startButton = this.createButton(
-        this.scale.width / 2,
-        this.logo.y + 250,
-        "Начать",
-        async () => {
-            if (!this.isFormOpen) {
-            const isAuthenticated = await this.checkAuth();
-            if (isAuthenticated) {
-                this.scene.start('Map');
-            } else {
-                this.showAuthForm();
+            this.scale.width / 2,
+            this.logo.y + 250,
+            "Начать",
+            async () => {
+                if (!this.isFormOpen) {
+                    const isAuthenticated = await this.checkAuth();
+                    if (isAuthenticated) {
+                        this.scene.start('Map', { accessToken: isAuthenticated});
+                    } else {
+                        this.showAuthForm();
+                    }
+                }
             }
-            }
-        }
         ).setDepth(3);
-
+        
         // Кнопка "О проекте"
         this.aboutButton = this.createButton(
             this.scale.width / 2,
@@ -93,13 +92,18 @@ export class Intro extends Scene {
                 if (!this.isFormOpen) window.open("/about", "_blank");
             }
         ).setDepth(3);
-
+        
         // Добавляем элементы в массив после их создания
         this.interactiveElements.push(this.startButton, this.aboutButton);
-
+        if (this.startButton && this.aboutButton) {
+            this.interactiveElements.push(this.startButton, this.aboutButton);
+        }
+        this.events.on('destroy', () => {
+            this.interactiveElements = [];
+        });
     }
-
-createButton(
+    
+    createButton(
         x: number,
         y: number,
         text: string,
@@ -143,6 +147,7 @@ createButton(
 
     private async checkAuth(): Promise<string | false> {
         try {
+            // Сначала проверяем, есть ли валидный access token
             const response = await fetch('http://localhost:3000/auth/check', {
                 method: 'GET',
                 credentials: 'include',
@@ -151,7 +156,12 @@ createButton(
             if (response.ok) {
                 const data = await response.json();
                 
-                // Если пользователь аутентифицирован, но нам нужен новый access token
+                // Если пользователь аутентифицирован, возвращаем текущий токен
+                if (data.authenticated && data.accessToken) {
+                    return data.accessToken;
+                }
+                
+                // Если access token истек, но есть refresh token
                 if (data.authenticated) {
                     const tokensResponse = await fetch('http://localhost:3000/auth/refresh', {
                         method: 'POST',
@@ -160,7 +170,7 @@ createButton(
                     
                     if (tokensResponse.ok) {
                         const tokensData = await tokensResponse.json();
-                        return tokensData.accessToken; // Возвращаем новый access token
+                        return tokensData.accessToken;
                     }
                 }
             }
@@ -239,7 +249,7 @@ createButton(
         // Отключаем интерактивность всех элементов фона
         this.interactiveElements.forEach(element => {
             if (element && typeof element.setInteractive === 'function') {
-                element.removeInteractive();
+                this.removeInteractiveElement(element);
             }
         });
         
@@ -250,60 +260,31 @@ createButton(
             duration: 300
         });
     }
-
+    private removeInteractiveElement(element: GameObjects.GameObject) {
+        this.interactiveElements = this.interactiveElements.filter(el => el !== element);
+    }
     private enableBackgroundInteractivity() {
-        // Включаем интерактивность обратно
-        this.interactiveElements.forEach(element => {
-            if (element && typeof element.setInteractive === 'function') {
-                // Для контейнера нужно повторно задать interactive
+    this.interactiveElements.forEach(element => {
+        // Проверяем, что элемент существует и имеет связь со сценой
+        if (element && element.scene && typeof element.setInteractive === 'function') {
+            try {
                 if (element instanceof Phaser.GameObjects.Container) {
                     element.setInteractive({ useHandCursor: true });
                 } else {
                     element.setInteractive();
                 }
+            } catch (error) {
+                console.warn('Failed to set interactive on element:', element, error);
             }
-        });
-        
-        // Возвращаем нормальную прозрачность
-        this.tweens.add({
-            targets: [this.logo, this.startButton, this.aboutButton],
-            alpha: 1,
-            duration: 300
-        });
-    }
-
-    private addOverlay() {
-        const overlay = document.createElement("div");
-        overlay.className = "game-overlay";
-        overlay.id = "game-overlay";
-        overlay.style.opacity = "0";
-
-        // Закрытие формы при клике на оверлей
-        overlay.addEventListener("click", () => this.hideForm());
-
-        document.getElementById("game-container")?.appendChild(overlay);
-
-        // Анимация появления оверлея
-        setTimeout(() => {
-            overlay.style.transition = "opacity 0.3s ease-out";
-            overlay.style.opacity = "1";
-        }, 10);
-    }
-
-    private removeOverlay() {
-        const overlay = document.getElementById("game-overlay");
-        if (overlay) {
-            // Анимация исчезновения оверлея
-            overlay.style.transition = "opacity 0.3s ease-out";
-            overlay.style.opacity = "0";
-
-            // Удаляем после завершения анимации
-            setTimeout(() => {
-                overlay.remove();
-            }, 300);
         }
-    }
-
+    });
+    
+    this.tweens.add({
+        targets: [this.logo, this.startButton, this.aboutButton],
+        alpha: 1,
+        duration: 300
+    });
+}
         private async handleAuthSubmit(username: string, password: string) {
             try {
                 const response = await fetch('http://localhost:3000/auth/login', {

@@ -48,7 +48,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
                         <h2 className="text-3xl font-bold">Профиль игрока</h2>
                         <button 
                             onClick={onClose}
-                            className="text-[#7a5859] hover:text-[#5a3839] text-2xl"
+                            className="text-[#7a5859] hover:text-[#5a3839] text-6xl"
                         >
                             ×
                         </button>

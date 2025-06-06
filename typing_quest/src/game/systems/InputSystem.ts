@@ -35,13 +35,25 @@ export class InputSystem {
     public setInputActive(active: boolean) {
         this.isInputActive = active;
     }
-    private generateSequence(templates: string[], count: number): string[] {
+     private generateSequence(templates: string[], count: number): string[] {
         let result: string[] = [];
+        const availableChars = templates[0]; // Получаем строку символов (например "фывапролджэ")
+        
         for (let i = 0; i < count; i++) {
-            const randomTemplate = templates[Math.floor(Math.random() * templates.length)];
-            result.push(...randomTemplate.split(""));
+            // Генерируем 4 случайных символа
+            let group = [];
+            for (let j = 0; j < 4; j++) {
+                const randomChar = availableChars[Math.floor(Math.random() * availableChars.length)];
+                group.push(randomChar);
+            }
+            
+            // Добавляем пробел (который будет отображаться как "_")
+            group.push("_");
+            
+            result.push(...group);
         }
-        return result.map((char) => (char === "_" ? " " : char));
+        
+        return result;
     }
 
     private createInputInterface() {
@@ -154,11 +166,27 @@ export class InputSystem {
         if (!this.isInputActive || this.isProcessingInput) return;
         this.isProcessingInput = true;
 
-        if (event.key.toLowerCase() === this.fullSequence[this.currentInputIndex]) {
+        // Получаем ожидаемый символ
+        let expectedChar = this.fullSequence[this.currentInputIndex];
+        
+        // Если ожидается пробел (отображается как "_"), то проверяем нажатие пробела
+        if (expectedChar === '_') {
+            if (event.code === 'Space') {
+                this.scoreManager.recordCorrectChar(false);
+                const distance = this.processCorrectInput();
+                
+                if (this.onCorrectInputCallback) {
+                    this.onCorrectInputCallback(distance);
+                }
+            } else {
+                this.scoreManager.recordIncorrectChar(false);
+            }
+        } 
+        // Для обычных символов
+        else if (event.key.toLowerCase() === expectedChar.toLowerCase()) {
             this.scoreManager.recordCorrectChar(false);
             const distance = this.processCorrectInput();
             
-            // Вызываем callback при правильном вводе
             if (this.onCorrectInputCallback) {
                 this.onCorrectInputCallback(distance);
             }
