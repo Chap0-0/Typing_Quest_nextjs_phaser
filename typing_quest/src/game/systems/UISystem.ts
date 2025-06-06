@@ -10,7 +10,6 @@ export class UISystem {
     private scene: Scene;
     private statsText!: GameObjects.Text;
     private symbolContainer!: GameObjects.Container;
-    private livesText!: Phaser.GameObjects.Text;
     private pauseModalContainer!: HTMLDivElement;
     private resultsModalContainer!: HTMLDivElement;
     private pauseModalRoot: any = null;
@@ -42,20 +41,6 @@ export class UISystem {
             .setDepth(106);
 
         this.statsText.setShadow(1, 1, "rgba(255,255,255,0.5)", 1);
-
-        this.livesText = this.scene.add
-            .text(
-                this.scene.scale.width / 2,
-                this.scene.scale.height - 300,
-                "Lives: 5",
-                {
-                    fontFamily: "RuneScape",
-                    fontSize: "24px",
-                    color: "#000000",
-                }
-            )
-            .setScrollFactor(0)
-            .setDepth(110);
     }
 
     public updateStatsDisplay(
@@ -72,9 +57,6 @@ export class UISystem {
                 `Всего: ${scoreManager.getTotalCount()}`,
             ].join("  |  ")
         );
-        if (this.livesText) {
-            this.livesText.setText(`Lives: ${character.getLives()}`);
-        }
     }
 
     public createInputInterface() {
@@ -255,6 +237,5 @@ export class UISystem {
         
         this.symbolContainer?.destroy();
         this.statsText?.destroy();
-        this.livesText?.destroy();
     }
 }

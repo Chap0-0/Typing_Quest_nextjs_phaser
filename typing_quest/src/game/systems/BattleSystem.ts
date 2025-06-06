@@ -24,6 +24,9 @@ export class BattleSystem {
     private isBattleInputActive: boolean = false;
     private battleStartText!: Phaser.GameObjects.Text;
     private battleStartTimer!: Phaser.Time.TimerEvent;
+    private characterHpContainer!: GameObjects.Container;
+    private characterHpText!: GameObjects.Text;
+    private characterHpHearts: GameObjects.Image[] = [];
 
     constructor(
             scene: Scene,
@@ -44,7 +47,7 @@ export class BattleSystem {
         availableChars: string
     ) {
         if (this.isBattleMode) return;
-
+        
         this.enemyManager
             .getEnemies()
             .getChildren()
@@ -70,7 +73,7 @@ export class BattleSystem {
         this.character.stopMoving();
         enemy.stopForBattle(this.character.x);
         this.character.setFlipX(enemy.x < this.character.x);
-
+        this.createCharacterHpDisplay();
         this.createBattleStartText();
 
         this.battleStartTimer = this.scene.time.addEvent({
@@ -114,7 +117,46 @@ export class BattleSystem {
             repeat: -1
         });
     }
+private createCharacterHpDisplay() {
+        this.characterHpContainer?.destroy();
+        this.characterHpHearts = [];
 
+        this.characterHpContainer = this.scene.add.container(
+            this.character.x,
+            this.character.y - 60
+        ).setDepth(150);
+
+        this.characterHpText = this.scene.add.text(0, -10, this.character.getLives().toString(), {
+            fontFamily: 'RuneScape',
+            fontSize: '24px',
+            color: '#FFFFFF',
+            stroke: '#000000',
+            strokeThickness: 3
+        }).setOrigin(0.5);
+
+        const heartOffset = 25;
+        const heartPositions = [
+            { x: -heartOffset, y: 0 },
+            { x: heartOffset, y: 0 }
+        ];
+
+        heartPositions.forEach(pos => {
+            const heart = this.scene.add.image(pos.x, pos.y, 'heart_full')
+                .setScale(0.5);
+            this.characterHpHearts.push(heart);
+            this.characterHpContainer.add(heart);
+        });
+
+        this.characterHpContainer.add(this.characterHpText);
+    }
+
+    private updateCharacterHpDisplay() {
+        if (!this.characterHpText) return;
+        
+        this.characterHpText.setText(this.character.getLives().toString());
+        
+        this.characterHpContainer.setPosition(this.character.x, this.character.y - 60);
+    }
     private beginActualBattle(availableChars: string) {
         this.battleStartText?.destroy();
 
@@ -185,7 +227,6 @@ export class BattleSystem {
         const symbolSpacing = 36;
         let xPosition = -((this.battleSequence.length - 1) * symbolSpacing) / 2;
 
-        // Прошлые символы
         this.battleSequence
             .slice(0, this.battleInputIndex)
             .forEach((symbol) => {
@@ -247,6 +288,7 @@ export class BattleSystem {
         const progressWidth = width * (this.timeLeft / this.timeToAttack);
         this.timerBar.fillStyle(0xff0000, 1);
         this.timerBar.fillRect(x, y, progressWidth, height);
+        this.updateCharacterHpDisplay();
     }
     
     private resetAttackTimer() {
@@ -311,7 +353,9 @@ export class BattleSystem {
         if (success && this.battleEnemy) {
             this.battleEnemy.takeDamage();
         }
-        
+        this.characterHpContainer?.destroy();
+        this.characterHpText?.destroy();
+        this.characterHpHearts = [];
         this.isBattleMode = false;
         this.isBattleInputActive = false;
         this.battleEnemy = null;
