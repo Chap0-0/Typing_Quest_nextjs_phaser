@@ -76,7 +76,7 @@ export class Map extends Scene {
 
     private async checkToken(): Promise<string | null> {
     try {
-        const response = await fetch('http://localhost:3000/auth/refresh', {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/refresh`, {
             method: 'POST',
             credentials: 'include',
         });
@@ -215,7 +215,7 @@ export class Map extends Scene {
                 <ProfileButton onClick={() => this.showProfileModal()} />
                 <LogoutButton onClick={async () => {
                     try {
-                        await this.fetchWithAuth("http://localhost:3000/auth/logout", {
+                        await this.fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/auth/logout`, {
                             method: "POST",
                             credentials: "include",
                         });
@@ -240,7 +240,7 @@ export class Map extends Scene {
     }
     private async loadLevelsFromServer() {
         try {
-            const response = await this.fetchWithAuth("http://localhost:3000/levels", {
+            const response = await this.fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/levels`, {
                 method: "GET",
                 headers: {
                     Authorization: `Bearer ${this.accessToken}`,
@@ -453,7 +453,7 @@ export class Map extends Scene {
     private async loadProfileData() {
     try {
         // Загружаем статистику пользователя
-        const statsResponse = await this.fetchWithAuth("http://localhost:3000/results/user/stats", {
+        const statsResponse = await this.fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/results/user/stats`, {
         method: "GET",
         headers: {
             Authorization: `Bearer ${this.accessToken}`,
@@ -461,7 +461,7 @@ export class Map extends Scene {
         });
 
         // Загружаем историю уровней
-        const historyResponse = await this.fetchWithAuth("http://localhost:3000/results/user", {
+        const historyResponse = await this.fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/results/user`, {
         method: "GET",
         headers: {
             Authorization: `Bearer ${this.accessToken}`,
@@ -469,7 +469,7 @@ export class Map extends Scene {
         });
 
         // Загружаем достижения
-        const achievementsResponse = await this.fetchWithAuth("http://localhost:3000/achievements/user", {
+        const achievementsResponse = await this.fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/achievements/user`, {
         method: "GET",
         headers: {
             Authorization: `Bearer ${this.accessToken}`,
@@ -477,7 +477,7 @@ export class Map extends Scene {
         });
 
         // Загружаем все возможные достижения
-        const allAchievementsResponse = await this.fetchWithAuth("http://localhost:3000/achievements", {
+        const allAchievementsResponse = await this.fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/achievements`, {
         method: "GET",
         headers: {
             Authorization: `Bearer ${this.accessToken}`,
@@ -564,7 +564,7 @@ export class Map extends Scene {
 
     // Если токен истек, пробуем обновить его
     if (response.status === 401) {
-        const refreshResponse = await fetch('http://localhost:3000/auth/refresh', {
+        const refreshResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/refresh`, {
             method: 'POST',
             credentials: 'include',
         });

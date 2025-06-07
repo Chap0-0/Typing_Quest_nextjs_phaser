@@ -130,7 +130,7 @@ export class UISystem {
     public async showResultsWindow(stats: any, onComplete: () => void) {
         let leaderboard = [];
         try {
-            const response = await fetch(`http://localhost:3000/results/level/${stats.levelId}?limit=5`);
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/results/level/${stats.levelId}?limit=5`);
             if (response.ok) {
                 leaderboard = await response.json();
             }

@@ -140,7 +140,7 @@ export class Intro extends Scene {
 
     private async checkAuth(): Promise<string | false> {
         try {
-            const response = await fetch('http://localhost:3000/auth/check', {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}}/auth/check`, {
                 method: 'GET',
                 credentials: 'include',
             });
@@ -153,7 +153,7 @@ export class Intro extends Scene {
                 }
                 
                 if (data.authenticated) {
-                    const tokensResponse = await fetch('http://localhost:3000/auth/refresh', {
+                    const tokensResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/refresh`, {
                         method: 'POST',
                         credentials: 'include',
                     });
@@ -274,7 +274,7 @@ export class Intro extends Scene {
 }
         private async handleAuthSubmit(username: string, password: string) {
             try {
-                const response = await fetch('http://localhost:3000/auth/login', {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -300,7 +300,7 @@ export class Intro extends Scene {
 
         private async handleRegisterSubmit(username: string, email: string, password: string) {
             try {
-                const response = await fetch('http://localhost:3000/auth/register', {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

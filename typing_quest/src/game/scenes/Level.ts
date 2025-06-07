@@ -302,7 +302,7 @@ private adjustMapPosition() {
         };
         this.saveResultToServer(stats);
     try {
-        const response = await fetch("http://localhost:3000/achievements/check", {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/achievements/check`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -329,7 +329,7 @@ private adjustMapPosition() {
     private async saveResultToServer(stats: any) {
         try {
             const timeTaken = this.scoreManager.getTimeTaken();
-            const response = await fetch('http://localhost:3000/results', {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/results`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
