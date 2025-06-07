@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="10" height="10" tilewidth="8" tileheight="8" infinite="0" nextlayerid="5" nextobjectid="8">
+ <editorsettings>
+  <export target="../intro/register-ui.tmj" format="json"/>
+ </editorsettings>
+ <tileset firstgid="1" source="../intro/ui-components.tsx"/>
+ <layer id="1" name="bg" width="10" height="10">
+  <data encoding="csv">
+1003,1004,1005,1006,1007,1004,1005,1006,1007,1008,
+1106,1107,1108,1109,1109,1109,1109,1109,1110,1111,
+1209,1210,1025,921,922,923,1025,1026,1213,1214,
+1312,1313,922,923,923,923,1128,1129,1316,1317,
+1415,1416,1025,1026,1026,1026,1231,1232,1419,1420,
+1518,1519,1128,1129,1129,921,921,922,1522,1523,
+1312,1024,921,921,1024,1024,1024,1025,1522,1214,
+1415,1127,1024,1024,1127,1127,1127,1128,1522,1317,
+1621,1622,1624,1624,1624,1624,1624,1624,1625,1626,
+1724,1725,1726,1727,1728,1728,1727,1728,1728,1729
+</data>
+ </layer>
+ <layer id="2" name="main" width="10" height="10">
+  <data encoding="csv">
+0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,
+0,0,5471,5472,0,0,5471,5472,0,0,
+0,0,5574,5575,0,0,5574,5575,0,0,
+0,0,5677,5575,0,0,5677,5678,0,0,
+0,0,5574,5575,0,0,5574,5575,0,0,
+0,0,5677,5575,0,0,5677,5678,0,0,
+0,0,5780,5781,0,0,5780,5781,0,0,
+0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0
+</data>
+ </layer>
+ <objectgroup id="4" name="ввод" visible="0">
+  <object id="3" x="32" y="56">
+   <properties>
+    <property name="name" value="Никнейм"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="4" x="32" y="88">
+   <properties>
+    <property name="name" value="Email"/>
+   </properties>
+   <point/>
+  </object>
+ </objectgroup>
+</map>
