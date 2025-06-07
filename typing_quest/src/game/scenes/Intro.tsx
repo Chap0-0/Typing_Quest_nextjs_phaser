@@ -140,7 +140,7 @@ export class Intro extends Scene {
 
     private async checkAuth(): Promise<string | false> {
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}}/auth/check`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/check`, {
                 method: 'GET',
                 credentials: 'include',
             });
