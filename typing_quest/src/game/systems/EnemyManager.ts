@@ -13,19 +13,20 @@ export class EnemyManager {
         });
     }
 
-    public createFromTilemap(map: Tilemaps.Tilemap, scaleRatio: number) {
+    public createFromTilemap(map: Tilemaps.Tilemap,offsetY: number = 0) {
         const enemiesLayer = map.getObjectLayer('enemies');
         if (!enemiesLayer) return;
+
         enemiesLayer.objects.forEach((enemyObj: any) => {
-            const type = enemyObj.properties[0].value;
+            const type = enemyObj.properties.find((p: any) => p.name === 'type')?.value;
             if (!type) return;
             
             const config = this.enemyConfig.enemyTypes.find((e: any) => e.type === type);
             if (!config) return;
 
             this.createEnemy(
-                enemyObj.x! * scaleRatio + enemyObj.width! * scaleRatio / 2,
-                enemyObj.y! * scaleRatio - enemyObj.height! * scaleRatio,
+                enemyObj.x , 
+                enemyObj.y + offsetY, 
                 type,
                 config
             );

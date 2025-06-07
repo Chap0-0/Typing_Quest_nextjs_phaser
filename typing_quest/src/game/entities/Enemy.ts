@@ -30,7 +30,7 @@ export class Enemy extends Physics.Arcade.Sprite {
         this.bodyWidth = this.config.bodyWidth || this.config.frameWidth * 0.6;
         this.bodyHeight =
             this.config.bodyHeight || this.config.frameHeight * 0.8;
-        this.setScale(1.5);
+        this.setScale(0.8);
         this.y -= 40;
         this.setSize(this.bodyWidth, this.bodyHeight).setOffset(
             (this.config.frameWidth - this.bodyWidth) / 2,

@@ -9,7 +9,7 @@ import { UISystem } from "@/game/systems/UISystem";
 
 
 export class Level extends Scene {
-    private readonly distancePerKey: number = 100;
+    private readonly distancePerKey: number = 40;
     private backgroundMusic!: Sound.BaseSound;
     private isAudioPlaying: boolean = true;
     private character!: Character;
@@ -18,14 +18,14 @@ export class Level extends Scene {
     private finishZone: Phaser.Types.Tilemaps.TiledObject | null = null;
     private enemyManager!: EnemyManager;
     private scoreManager!: ScoreManager;
-    private battleDistance: number = 75;
+    private battleDistance: number = 25;
     private battleSystem: BattleSystem;
     private inputSystem!: InputSystem;
     private uiSystem!: UISystem;
     private level_id: string;
     private levelConfig: any;
     private accessToken: string | null = null;
-
+    public mapOffsetY: number = 0;
     constructor() {
         super("Level");
     }
@@ -38,6 +38,7 @@ export class Level extends Scene {
         this.isGamePaused = false;
         this.initScene();
         this.createLevelMap();
+        this.adjustMapPosition();
         this.createCharacter();
         this.createAudio();
         this.createEnemies();
@@ -48,7 +49,6 @@ export class Level extends Scene {
             () => this.toggleAudio(),
             () => this.scene.start("Map")
         );
-        this.uiSystem.createInputInterface();
         
         this.scoreManager = new ScoreManager(this);
         
@@ -86,7 +86,66 @@ export class Level extends Scene {
         this.checkZoneIntersections();
         this.character.updateState();
     }
+private createCharacter() {
+    // Получаем слой character из карты
+    const characterLayer = this.map.getObjectLayer("character");
+    if (!characterLayer || characterLayer.objects.length === 0) {
+        console.error("Character layer not found or empty in the tilemap!");
+        this.character = new Character(this, 100, 200 + this.mapOffsetY, "character");
+    } else {
+        // Берем первый объект из слоя character
+        const charData = characterLayer.objects[0];
+        this.character = new Character(
+            this, 
+            charData.x, 
+            charData.y + this.mapOffsetY,
+            "character"
+        );
+    }
 
+
+    const collidersLayer = this.map.getLayer("main");
+    if (collidersLayer && collidersLayer.tilemapLayer) {
+        this.physics.add.collider(
+            this.character,
+            collidersLayer.tilemapLayer
+        );
+    }
+
+    this.cameras.main
+        .startFollow(this.character)
+        .setZoom(2.8)
+        .setBounds(
+            0,
+            0,
+            this.map.widthInPixels, 
+            this.map.heightInPixels *
+                (this.scale.height / this.map.heightInPixels)
+        );
+    this.background.setScrollFactor(0);
+}
+
+
+private adjustMapPosition() {
+    // Вычисляем насколько нужно поднять карту
+    const offsetY = this.scale.height - this.map.heightInPixels;
+    this.mapOffsetY = offsetY; // Сохраняем смещение для последующего использования
+    
+    // Смещаем все слои карты
+    this.map.layers.forEach(layer => {
+        if (layer.tilemapLayer) {
+            layer.tilemapLayer.y += offsetY;
+        }
+    });
+
+    // Обновляем границы физического мира
+    this.physics.world.setBounds(
+        0,
+        offsetY,
+        this.map.widthInPixels,
+        this.map.heightInPixels
+    );
+}
     private initScene() {
         this.background = this.add
             .image(0, 0, `${this.levelConfig.levelId}_bg`)
@@ -96,80 +155,30 @@ export class Level extends Scene {
     }
 
     private createLevelMap() {
-        this.map = this.make.tilemap({
-            key: `${this.levelConfig.levelId}_map`,
-        });
-        const decors = this.map.addTilesetImage(
-            "2",
-            `decors_${this.levelConfig.levelId}`,
-            0,
-            0
-        );
-        const tileset = this.map.addTilesetImage(
-            "1",
-            `tiles_${this.levelConfig.levelId}`,
-            0,
-            0
-        );
+        this.map = this.make.tilemap({ key: `${this.levelConfig.levelId}_map` });
+        
+        const decors = this.map.addTilesetImage("2", `decors_${this.levelConfig.levelId}`);
+        const tileset = this.map.addTilesetImage("1", `tiles_${this.levelConfig.levelId}`);
 
-        const backgroundLayer = this.map.createLayer(
-            "bg",
-            [decors, tileset],
-            0,
-            0
-        );
+        // Создаем слои без масштабирования
+        const backgroundLayer = this.map.createLayer("bg", [decors, tileset], 0, 0);
         const collidersLayer = this.map.createLayer("main", tileset, 0, 0);
-
         this.autojumpZones = this.map.getObjectLayer("autojump")?.objects || [];
         this.finishZone = this.map.getObjectLayer("finish")?.objects[0] || null;
+        collidersLayer.setCollisionByExclusion([-1]);
 
-        collidersLayer.setDepth(1).setCollisionByExclusion([-1]);
-        backgroundLayer.setDepth(1);
-
-        const scaleRatio = this.scale.height / this.map.heightInPixels;
-        collidersLayer.setScale(scaleRatio);
-        backgroundLayer.setScale(scaleRatio);
-
-        this.physics.world.setBounds(
-            0,
-            0,
-            this.map.widthInPixels * scaleRatio,
-            this.map.heightInPixels * scaleRatio
-        );
-    }
-
-    private createCharacter() {
-        this.character = new Character(this, 100, 200, "character");
-
-        const collidersLayer = this.map.getLayer("main");
-        if (collidersLayer && collidersLayer.tilemapLayer) {
-            this.physics.add.collider(
-                this.character,
-                collidersLayer.tilemapLayer
-            );
-        }
-
-        this.cameras.main
-            .startFollow(this.character)
-            .setZoom(1.3)
-            .setBounds(
-                0,
-                0,
-                this.map.widthInPixels *
-                    (this.scale.height / this.map.heightInPixels),
-                this.map.heightInPixels *
-                    (this.scale.height / this.map.heightInPixels)
-            );
+        // Фиксируем границы мира в пикселях карты
+        this.physics.world.setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels);
     }
 
     private createEnemies() {
         this.enemyManager = new EnemyManager(this, this.levelConfig);
         this.enemyManager.createFromTilemap(
             this.map,
-            this.scale.height / this.map.heightInPixels
+            this.mapOffsetY
         );
+        
         const collidersLayer = this.map.getLayer("main");
-
         if (collidersLayer && collidersLayer.tilemapLayer) {
             this.physics.add.collider(
                 this.enemyManager.getEnemies(),
@@ -211,10 +220,10 @@ export class Level extends Scene {
         if (player.body.blocked.down || player.body.touching.down) {
             for (const zone of this.autojumpZones) {
                 const zoneRect = new Phaser.Geom.Rectangle(
-                    zone.x * scaleRatio,
-                    zone.y * scaleRatio,
-                    zone.width * scaleRatio,
-                    zone.height * scaleRatio
+                    zone.x,
+                    zone.y + this.mapOffsetY,
+                    zone.width,
+                    zone.height
                 );
                 if (
                     Phaser.Geom.Intersects.RectangleToRectangle(
@@ -222,6 +231,7 @@ export class Level extends Scene {
                         zoneRect
                     )
                 ) {
+                    player.move(100);
                     player.jump();
                     break;
                 }
@@ -231,10 +241,10 @@ export class Level extends Scene {
         // Финиш
         if (this.finishZone) {
             const finishRect = new Phaser.Geom.Rectangle(
-                this.finishZone.x * scaleRatio,
-                this.finishZone.y * scaleRatio,
-                this.finishZone.width * scaleRatio,
-                this.finishZone.height * scaleRatio
+                this.finishZone.x,
+                this.finishZone.y + this.mapOffsetY,
+                this.finishZone.width,
+                this.finishZone.height
             );
             if (
                 Phaser.Geom.Intersects.RectangleToRectangle(

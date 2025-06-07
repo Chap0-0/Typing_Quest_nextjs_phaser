@@ -35,6 +35,6 @@ export class Preloader extends Scene {
     }
 
     create() {
-        this.scene.start('Intro');
+        this.scene.start('Map');
     }
 }

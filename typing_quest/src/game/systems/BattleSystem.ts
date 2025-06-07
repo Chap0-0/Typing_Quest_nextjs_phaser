@@ -28,13 +28,21 @@ export class BattleSystem {
     private characterHpText!: GameObjects.Text;
     private characterHpHearts: GameObjects.Image[] = [];
 
+    // Константы для интерфейса боя
+    private readonly BATTLE_INTERFACE_Y_PERCENT = 40;
+    private readonly BATTLE_FONT_SIZE = 24;
+    private readonly BATTLE_SYMBOL_SPACING = 24;
+    private readonly BATTLE_BAR_WIDTH = 200;
+    private readonly BATTLE_BAR_HEIGHT = 5;
+    private readonly BATTLE_BAR_Y_OFFSET = 20;
+
     constructor(
-            scene: Scene,
-            character: Character,
-            enemyManager: any,
-            scoreManager: ScoreManager,
-            inputSystem: InputSystem
-        ) {
+        scene: Scene,
+        character: Character,
+        enemyManager: any,
+        scoreManager: ScoreManager,
+        inputSystem: InputSystem
+    ) {
         this.scene = scene;
         this.character = character;
         this.enemyManager = enemyManager;
@@ -92,7 +100,7 @@ export class BattleSystem {
             'БОЙ НАЧИНАЕТСЯ!',
             {
                 fontFamily: 'RuneScape',
-                fontSize: '72px',
+                fontSize: '48px',
                 color: '#FF0000',
                 stroke: '#FFFFFF',
                 strokeThickness: 5,
@@ -123,12 +131,12 @@ private createCharacterHpDisplay() {
 
         this.characterHpContainer = this.scene.add.container(
             this.character.x,
-            this.character.y - 60
+            this.character.y + 60
         ).setDepth(150);
 
-        this.characterHpText = this.scene.add.text(0, -10, this.character.getLives().toString(), {
+        this.characterHpText = this.scene.add.text(0, 0, this.character.getLives().toString(), {
             fontFamily: 'RuneScape',
-            fontSize: '24px',
+            fontSize: '20px',
             color: '#FFFFFF',
             stroke: '#000000',
             strokeThickness: 3
@@ -155,15 +163,16 @@ private createCharacterHpDisplay() {
         
         this.characterHpText.setText(this.character.getLives().toString());
         
-        this.characterHpContainer.setPosition(this.character.x, this.character.y - 60);
+        this.characterHpContainer.setPosition(this.character.x, this.character.y + 60);
     }
-    private beginActualBattle(availableChars: string) {
+     private beginActualBattle(availableChars: string) {
         this.battleStartText?.destroy();
+        this.character.setTargetXZero();
 
         this.battleSequence = this.generateBattleSequence(availableChars, 6);
         this.battleInputIndex = 0;
 
-        this.scene.cameras.main.zoomTo(2, 500);
+        this.scene.cameras.main.zoomTo(4, 500);
 
         this.createBattleInterface();
         this.createTimerBar();
@@ -176,22 +185,15 @@ private createCharacterHpDisplay() {
         this.scene.input.keyboard?.on('keydown', this.handleBattleInput.bind(this));
     }
 
-    private generateBattleSequence(availableChars: string, length: number): string[] {
-        const sequence = [];
-        for (let i = 0; i < length; i++) {
-            const randomIndex = Math.floor(Math.random() * availableChars.length);
-            sequence.push(availableChars[randomIndex]);
-        }
-        return sequence;
-    }
-
     private createBattleInterface() {
+        const interfaceY = this.scene.scale.height * (this.BATTLE_INTERFACE_Y_PERCENT / 100);
+
         this.battleBackground = this.scene.add
             .rectangle(
                 this.scene.scale.width / 2,
-                this.scene.scale.height * 0.3,
+                interfaceY,
                 this.scene.scale.width,
-                80,
+                40,
                 0x222222,
                 0.8
             )
@@ -201,7 +203,7 @@ private createCharacterHpDisplay() {
         this.battleSymbolContainer = this.scene.add
             .container(
                 this.scene.scale.width / 2,
-                this.scene.scale.height * 0.3
+                interfaceY
             )
             .setDepth(104)
             .setScrollFactor(0);
@@ -213,7 +215,7 @@ private createCharacterHpDisplay() {
         this.battleSymbolContainer.removeAll(true);
 
         const symbolStyle = {
-            fontSize: "48px",
+            fontSize: `${this.BATTLE_FONT_SIZE}px`,
             fontFamily: "RuneScape",
             color: "#FF5555",
         };
@@ -224,8 +226,7 @@ private createCharacterHpDisplay() {
         };
         const pastStyle = { ...symbolStyle, color: "#FF0000" };
 
-        const symbolSpacing = 36;
-        let xPosition = -((this.battleSequence.length - 1) * symbolSpacing) / 2;
+        let xPosition = -((this.battleSequence.length - 1) * this.BATTLE_SYMBOL_SPACING) / 2;
 
         this.battleSequence
             .slice(0, this.battleInputIndex)
@@ -235,7 +236,7 @@ private createCharacterHpDisplay() {
                         .text(xPosition, 0, symbol, pastStyle)
                         .setOrigin(0.5)
                 );
-                xPosition += symbolSpacing;
+                xPosition += this.BATTLE_SYMBOL_SPACING;
             });
 
         if (this.battleInputIndex < this.battleSequence.length) {
@@ -249,7 +250,7 @@ private createCharacterHpDisplay() {
                     )
                     .setOrigin(0.5)
             );
-            xPosition += symbolSpacing;
+            xPosition += this.BATTLE_SYMBOL_SPACING;
         }
 
         this.battleSequence
@@ -260,10 +261,9 @@ private createCharacterHpDisplay() {
                         .text(xPosition, 0, symbol, symbolStyle)
                         .setOrigin(0.5)
                 );
-                xPosition += symbolSpacing;
+                xPosition += this.BATTLE_SYMBOL_SPACING;
             });
     }
-
 
     private createTimerBar() {
         this.timerBar?.destroy();
@@ -276,21 +276,29 @@ private createCharacterHpDisplay() {
     }
     
     private updateTimerBar() {
-        const width = 400;
-        const height = 10;
-        const x = this.scene.scale.width / 2 - width / 2;
-        const y = this.scene.scale.height * 0.3 + 40;
+        const interfaceY = this.scene.scale.height * (this.BATTLE_INTERFACE_Y_PERCENT / 100);
+        const x = this.scene.scale.width / 2 - this.BATTLE_BAR_WIDTH / 2;
+        const y = interfaceY + this.BATTLE_BAR_Y_OFFSET;
         
         this.timerBar.clear();
         this.timerBar.fillStyle(0x333333, 0.8);
-        this.timerBar.fillRect(x, y, width, height);
+        this.timerBar.fillRect(x, y, this.BATTLE_BAR_WIDTH, this.BATTLE_BAR_HEIGHT);
         
-        const progressWidth = width * (this.timeLeft / this.timeToAttack);
+        const progressWidth = this.BATTLE_BAR_WIDTH * (this.timeLeft / this.timeToAttack);
         this.timerBar.fillStyle(0xff0000, 1);
-        this.timerBar.fillRect(x, y, progressWidth, height);
+        this.timerBar.fillRect(x, y, progressWidth, this.BATTLE_BAR_HEIGHT);
         this.updateCharacterHpDisplay();
     }
-    
+
+    private generateBattleSequence(availableChars: string, length: number): string[] {
+        const sequence = [];
+        for (let i = 0; i < length; i++) {
+            const randomIndex = Math.floor(Math.random() * availableChars.length);
+            sequence.push(availableChars[randomIndex]);
+        }
+        return sequence;
+    }
+
     private resetAttackTimer() {
         this.timeLeft = this.timeToAttack;
         this.attackTimer?.destroy();
@@ -368,7 +376,7 @@ private createCharacterHpDisplay() {
         this.battleStartText?.destroy();
 
         this.scene.cameras.main.pan(this.character.x, this.character.y, 500);
-        this.scene.cameras.main.zoomTo(1.3, 500);
+        this.scene.cameras.main.zoomTo(2.8, 500);
 
         this.scene.input.keyboard?.off('keydown', this.handleBattleInput);
 

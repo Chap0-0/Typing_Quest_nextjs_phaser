@@ -36,10 +36,14 @@ const config: Phaser.Types.Core.GameConfig = {
         }
     },
     scale: {
-        mode: Phaser.Scale.RESIZE,  // Автоматическое изменение размера
+        mode: Phaser.Scale.FIT,  // Автоматическое изменение размера
         autoCenter: Phaser.Scale.CENTER_BOTH,  // Центрирование
     },
-    
+    pixelArt:true,
+    fps: {
+            min: 30,
+            target: 60,
+    }
 };
 
 const StartGame = (parent: string) => {

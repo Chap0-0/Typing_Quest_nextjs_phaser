@@ -3,7 +3,7 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "",
+    "activeFile": "auth-ui.tmx",
     "automapping.whileDrawing": true,
     "expandedProjectPaths": [
         "."
@@ -105,8 +105,8 @@
             "scale": 1.5,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 79.66666666666666,
-                "y": 96
+                "x": 173.99999999999997,
+                "y": 124
             }
         },
         "C:/Users/Chapiko/Desktop/Дипломка/Project/typing_quest/public/assets/ui/info-ui.tmx": {
@@ -116,8 +116,8 @@
             "scale": 3,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 79.83333333333334,
-                "y": 99.66666666666667
+                "x": 126.99999999999999,
+                "y": 113.66666666666664
             }
         },
         "auth-ui.tmj": {
@@ -154,8 +154,8 @@
             "scale": 3,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 79.83333333333334,
-                "y": 100
+                "x": 126.99999999999999,
+                "y": 114
             }
         },
         "ui-components.tsx": {

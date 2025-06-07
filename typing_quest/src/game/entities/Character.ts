@@ -1,11 +1,12 @@
 import { Scene, Physics } from "phaser";
+import { Level } from "../scenes/Level";
 
 export class Character extends Physics.Arcade.Sprite {
     private isMoving: boolean = false;
     private isRunning: boolean = false;
-    private walkSpeed: number = 200;
-    private runSpeed: number = 400;
-    private runThreshold: number = 300;
+    private walkSpeed: number = 50;
+    private runSpeed: number = 100;
+    private runThreshold: number = 80;
     private targetX = this.x;
     private numberAnim: number[]= [1,2,3];
     private battleMode: boolean = false;
@@ -19,7 +20,7 @@ export class Character extends Physics.Arcade.Sprite {
         scene.add.existing(this);
         scene.physics.add.existing(this);
 
-        this.setScale(2);
+        this.setScale(0.8);
         this.setDepth(100);
 
         this.body.setGravityY(1000);
@@ -156,13 +157,18 @@ export class Character extends Physics.Arcade.Sprite {
 
     }
 
+    public setTargetXZero(){
+        this.targetX = this.x;
+    }
+
     updateState() {
         const isOnGround = this.body.blocked.down || this.body.touching.down;
 
         if (isOnGround) {
             this.isJumping = false;
+            const distanceToTarget = this.targetX - this.x;
             if (this.isMoving) {
-                const distanceToTarget = this.targetX - this.x;
+                console.log(this.targetX);
                 this.isRunning = distanceToTarget > this.runThreshold;
                 
                 this.play(this.isRunning ? "run" : "walk", true);
@@ -257,8 +263,7 @@ export class Character extends Physics.Arcade.Sprite {
 
     jump() {
         if (this.body.blocked.down || this.body.touching.down) {
-            this.targetX += 100;
-            this.setVelocityY(-450);
+            this.setVelocityY(-300);
             this.isJumping = true;
             this.play("jump_up", true);
             this.updateHitbox("jump");
@@ -277,15 +282,18 @@ export class Character extends Physics.Arcade.Sprite {
             this.isTakingDamage = false;
         });
         
-        if (this.lives <= 0) {
+        if (this.lives < 1) {
             this.die();
         }
     }
 
     private die() {
         this.play("die", true);
-        this.scene.time.delayedCall(1000, () => {
-            this.scene.scene.start("Map");
+        this.scene.time.delayedCall(2000, () => {
+            if (this.scene instanceof Level) {
+                this.scene.cleanupScene();
+                this.scene.scene.start("Map");
+            }
         });
     }
     
