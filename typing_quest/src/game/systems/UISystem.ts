@@ -97,13 +97,15 @@ export class UISystem {
     public createPauseSystem(togglePause: () => void, toggleAudio: () => void, returnToMap: () => void) {
         this.createModalContainers();
         
-        const zoom = this.scene.cameras.main.zoom;
+        const pauseX = this.scene.scale.width * (33 / 100);
+        const pauseY = this.scene.scale.height * (34 / 100);
+
         const pauseButton = this.scene.add
-            .image(window.innerWidth / 7, 140 / zoom, "pause_button")
+            .image(pauseX, pauseY, "pause_button")
             .setInteractive({ useHandCursor: true })
             .setScrollFactor(0)
             .setDepth(10000)
-            .setScale(5 / zoom)
+            .setScale(0.4)
             .on("pointerdown", () => {
                 togglePause();
             });
