@@ -208,35 +208,29 @@ private adjustMapPosition() {
     }
 
     private checkZoneIntersections() {
-        const player = this.character;
-        const scaleRatio = this.scale.height / this.map.heightInPixels;
-        const playerBounds = new Phaser.Geom.Rectangle(
-            player.body.x,
-            player.body.y,
-            player.body.width,
-            player.body.height
-        );
+    const player = this.character;
+    const playerBounds = new Phaser.Geom.Rectangle(
+        player.body.x,
+        player.body.y,
+        player.body.width,
+        player.body.height
+    );
 
-        if (player.body.blocked.down || player.body.touching.down) {
-            for (const zone of this.autojumpZones) {
-                const zoneRect = new Phaser.Geom.Rectangle(
-                    zone.x,
-                    zone.y + this.mapOffsetY,
-                    zone.width,
-                    zone.height
-                );
-                if (
-                    Phaser.Geom.Intersects.RectangleToRectangle(
-                        playerBounds,
-                        zoneRect
-                    )
-                ) {
-                    player.move(100);
-                    player.jump();
-                    break;
-                }
+    if (player.body.blocked.down || player.body.touching.down) {
+        for (const zone of this.autojumpZones) {
+            const zoneRect = new Phaser.Geom.Rectangle(
+                zone.x,
+                zone.y + this.mapOffsetY,
+                zone.width,
+                zone.height
+            );
+            
+            if (Phaser.Geom.Intersects.RectangleToRectangle(playerBounds, zoneRect)) {
+                player.autoJump();
+                break;
             }
         }
+    }
 
         // Финиш
         if (this.finishZone) {
@@ -294,7 +288,7 @@ private adjustMapPosition() {
         this.isGamePaused = true;
         this.character.stopMoving();
         this.backgroundMusic.stop();
-        this.battleSystem.cleanup();
+        // this.battleSystem.cleanup();
         this.scoreManager.recordCorrectChar();
 
         const stats = {

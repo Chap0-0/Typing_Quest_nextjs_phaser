@@ -13,7 +13,8 @@ export class Character extends Physics.Arcade.Sprite {
     private attackCooldown: boolean = false;
     private lives: number = 5;
     private isTakingDamage: boolean = false;
-
+    private isJumping: boolean = false;
+    private isAutoJumping: boolean = false;
     constructor(scene: Scene, x: number, y: number, texture: string) {
         super(scene, x, y, texture);
 
@@ -23,8 +24,8 @@ export class Character extends Physics.Arcade.Sprite {
         this.setScale(0.8);
         this.setDepth(100);
 
-        this.body.setGravityY(1000);
-        this.setMaxVelocity(600, 1200);
+        this.body.setGravityY(500);
+        this.setMaxVelocity(400, 800);
 
         this.updateHitbox("idle");
     }
@@ -168,7 +169,6 @@ export class Character extends Physics.Arcade.Sprite {
             this.isJumping = false;
             const distanceToTarget = this.targetX - this.x;
             if (this.isMoving) {
-                console.log(this.targetX);
                 this.isRunning = distanceToTarget > this.runThreshold;
                 
                 this.play(this.isRunning ? "run" : "walk", true);
@@ -205,8 +205,18 @@ export class Character extends Physics.Arcade.Sprite {
         this.targetX += distanceToAdd;
         this.isMoving = true;
         
-        const speed = this.isRunning ? this.runSpeed : this.walkSpeed;
-        this.setVelocityX(speed);
+        if (!this.isJumping) {
+            const speed = this.isRunning ? this.runSpeed : this.walkSpeed;
+            this.setVelocityX(speed);
+        } else {
+            const currentVelocityX = this.body.velocity.x;
+            const direction = distanceToAdd > 0 ? 1 : -1;
+            const newVelocityX = (this.isRunning ? this.runSpeed : this.walkSpeed) * direction;
+            
+            if (Math.abs(currentVelocityX) < Math.abs(newVelocityX)) {
+                this.setVelocityX(newVelocityX);
+            }
+        }
     }
 
 
@@ -261,15 +271,23 @@ export class Character extends Physics.Arcade.Sprite {
         });
     }
 
-    jump() {
-        if (this.body.blocked.down || this.body.touching.down) {
-            this.setVelocityY(-300);
+    public autoJump() {
+        if ((this.body.blocked.down || this.body.touching.down) && !this.isAutoJumping) {
+            this.isAutoJumping = true;
+            const newTargetX = this.x + 80;
+            if (newTargetX > this.targetX) {
+                this.targetX = newTargetX;
+            }
+            this.setVelocity(100, -200);
             this.isJumping = true;
             this.play("jump_up", true);
             this.updateHitbox("jump");
+
+            this.scene.time.delayedCall(1000, () => {
+                this.isAutoJumping = false;
+            });
         }
     }
-
     public takeDamage() {
         if (this.isTakingDamage) return;
         
